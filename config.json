@@ -4,18 +4,26 @@
     "ip" : "192.168.0.120",
     "port" : 30009
   },
-  "disk" : [ {
+  "Disk" : [ {
     "name" : "/home/godb1",
-    "triggerValue": 80,
-    "triggerInUp" : true
+    "alertValue": 80,
+    "alertPolicy" : 1 
   }, {
-    "name" : "/home/godb2"
+    "name" : "/home/godb2",
+    "alertValue": 80,
+    "alertPolicy" : 1 
   }, {
-    "name" : "/home/godb3"
+    "name" : "/home/godb3",
+    "alertValue": 80,
+    "alertPolicy" : 1 
   }, {
-    "name" : "/home/godb4"
+  }, {
+    "name" : "/home/godb4",
+    "alertValue": 80,
+    "alertPolicy" : 1 
+  }, {
   } ],
-  "common" : [ {
+  "goldilocks" : [ {
     "name" : "execute",
     "enable" : true,
     "display" : true,
@@ -26,32 +34,36 @@
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "threshold_column" : 1,
-    "threshold_max" : 1,
+    "alertColumn" : 1,
+    "alertValue": 80,
+    "alertPolicy" : 1 ,
     "sql" : "select count(*) from v$session where connection_type = 'TCP'"
   }, {
     "name" : "lock",
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "threshold_column" : 1,
-    "threshold_max" : 1,
+    "alertColumn" : 1,
+    "alertValue": 80,
+    "alertPolicy" : 1 ,
     "sql" : "select count(*) from v$lock_wait"
   }, {
     "name" : "long_query",
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "threshold_column" : 1,
-    "threshold_max" : 1,
+    "alertColumn" : 1,
+    "alertValue": 80,
+    "alertPolicy" : 1 ,
     "sql" : "select count(*) from v$statement where last_exec_time >= 100000"
   }, {
     "name" : "tbs",
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "threshold_column" : 2,
-    "threshold_max" : 40,
+    "alertColumn" : 1,
+    "alertValue": 80,
+    "alertPolicy" : 1 ,
     "sql" : "select trim(tbs_name), to_char((used_data_ext_count/total_ext_count)*100.0, '90.99') from v$tablespace_stat"
   }, {
     "name" : "ager",

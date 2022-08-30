@@ -26,7 +26,7 @@ public class Gop {
 		{
 		    Gson gson = new GsonBuilder().create();
 		    Config config = gson.fromJson(reader, Config.class);
-		    System.out.println(config.host.name);
+		    System.out.println(config.toString());
 		}
 		//test 
 

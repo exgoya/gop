@@ -4,14 +4,14 @@ import java.util.Arrays;
 
 public class Config {
     public Host host;
-    public Common[] common;
-	public Config(Host host, Common[] common) {
+    public Goldilocks[] goldilocks;
+	public Config(Host host, Goldilocks[] common) {
 		super();
 		this.host = host;
-		this.common = common;
+		this.goldilocks = goldilocks;
 	}
 	@Override
 	public String toString() {
-		return "Config [host=" + host + ", common=" + Arrays.toString(common) + "]";
+		return "Config [host=" + host + ", goldilocks=" + Arrays.toString(goldilocks) + "]";
 	}
 }
