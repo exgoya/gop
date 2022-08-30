@@ -1,4 +1,5 @@
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Host {
 
@@ -15,7 +16,9 @@ public class Host {
 
 	@Override
 	public String toString() {
-		return "host [name=" + name + ", ip=" + ip + ", port=" + port + "]";
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		String json = gson.toJson(this);
+		
+		return json;	
 	}
-	
 }

@@ -2,6 +2,9 @@
 
 import java.util.Arrays;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 public class Config {
     public Host host;
     public Goldilocks[] goldilocks;
@@ -12,6 +15,8 @@ public class Config {
 	}
 	@Override
 	public String toString() {
-		return "Config [host=" + host + ", goldilocks=" + Arrays.toString(goldilocks) + "]";
-	}
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		String json = gson.toJson(this);
+		
+		return json;	}
 }

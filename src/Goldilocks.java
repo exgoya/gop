@@ -1,4 +1,5 @@
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Goldilocks {
 	public String name;
@@ -25,8 +26,9 @@ public class Goldilocks {
 
 	@Override
 	public String toString() {
-		return "Goldilocks [name=" + name + ", enable=" + enable + ", display=" + display + ", diff=" + diff
-				+ ", alertColumn=" + alertColumn + ", alertValue=" + alertValue + ", alertPolicy=" + alertPolicy
-				+ ", sql=" + sql + "]";
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		String json = gson.toJson(this);
+		
+		return json;
 	}
 }
