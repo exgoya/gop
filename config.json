@@ -1,0 +1,63 @@
+{
+  "host" : {
+    "name" : "g1n1",
+    "ip" : "192.168.0.120",
+    "port" : 30009
+  },
+  "disk" : [ {
+    "name" : "/home/godb1",
+    "triggerValue": 80,
+    "triggerInUp" : true
+  }, {
+    "name" : "/home/godb2"
+  }, {
+    "name" : "/home/godb3"
+  }, {
+    "name" : "/home/godb4"
+  } ],
+  "common" : [ {
+    "name" : "execute",
+    "enable" : true,
+    "display" : true,
+    "diff" : true,
+    "sql" : "select stat_value from v$system_sql_stat where stat_name = 'CALL_EXECUTE'"
+  }, {
+    "name" : "session",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "threshold_column" : 1,
+    "threshold_max" : 1,
+    "sql" : "select count(*) from v$session where connection_type = 'TCP'"
+  }, {
+    "name" : "lock",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "threshold_column" : 1,
+    "threshold_max" : 1,
+    "sql" : "select count(*) from v$lock_wait"
+  }, {
+    "name" : "long_query",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "threshold_column" : 1,
+    "threshold_max" : 1,
+    "sql" : "select count(*) from v$statement where last_exec_time >= 100000"
+  }, {
+    "name" : "tbs",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "threshold_column" : 2,
+    "threshold_max" : 40,
+    "sql" : "select trim(tbs_name), to_char((used_data_ext_count/total_ext_count)*100.0, '90.99') from v$tablespace_stat"
+  }, {
+    "name" : "ager",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "sql" : "select agable_scn_gap, oldest_session_id from v$agable_info"
+  } ]
+}

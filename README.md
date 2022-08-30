@@ -1,0 +1,2 @@
+# gop
+ goldilocks console monitoring
