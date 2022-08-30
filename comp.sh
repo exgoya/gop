@@ -1,1 +1,1 @@
-javac -cp lib/gson-2.9.1.jar -d ./bin src/server/*.java
+javac -cp lib/gson-2.9.1.jar -d ./bin src/*.java
