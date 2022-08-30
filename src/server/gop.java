@@ -16,7 +16,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 
 
-public class Main {
+public class gop {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		//read config
