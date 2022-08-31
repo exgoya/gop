@@ -5,6 +5,7 @@ public class ResultCommon {
 
 	public String name;
 	public int value;
+	
 	public ResultCommon(String name, int value) {
 		super();
 		this.name = name;
