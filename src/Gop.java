@@ -26,7 +26,12 @@ public class Gop {
 		{
 		    Gson gson = new GsonBuilder().create();
 		    Config config = gson.fromJson(reader, Config.class);
+		    
+		    //all print
 		    System.out.println(config.toString());
+		    //select print
+		    System.out.println(config.host.name);
+		    System.out.println(config.goldilocks[1].name);
 		}
 		//test 
 

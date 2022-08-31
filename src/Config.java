@@ -8,7 +8,7 @@ import com.google.gson.GsonBuilder;
 public class Config {
     public Host host;
     public Goldilocks[] goldilocks;
-	public Config(Host host, Goldilocks[] common) {
+	public Config(Host host, Goldilocks[] goldilocks) {
 		super();
 		this.host = host;
 		this.goldilocks = goldilocks;

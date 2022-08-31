@@ -4,25 +4,6 @@
     "ip" : "192.168.0.120",
     "port" : 30009
   },
-  "Disk" : [ {
-    "name" : "/home/godb1",
-    "alertValue": 80,
-    "alertPolicy" : 1 
-  }, {
-    "name" : "/home/godb2",
-    "alertValue": 80,
-    "alertPolicy" : 1 
-  }, {
-    "name" : "/home/godb3",
-    "alertValue": 80,
-    "alertPolicy" : 1 
-  }, {
-  }, {
-    "name" : "/home/godb4",
-    "alertValue": 80,
-    "alertPolicy" : 1 
-  }, {
-  } ],
   "goldilocks" : [ {
     "name" : "execute",
     "enable" : true,
