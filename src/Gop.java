@@ -31,7 +31,7 @@ public class Gop {
 		    System.out.println(config.toString());
 		    //select print
 		    System.out.println(config.host.name);
-		    System.out.println(config.goldilocks[1].name);
+		    System.out.println(config.common[1].name);
 		}
 		//test 
 

@@ -4,7 +4,7 @@
     "ip" : "192.168.0.120",
     "port" : 30009
   },
-  "goldilocks" : [ {
+  "common" : [ {
     "name" : "execute",
     "enable" : true,
     "display" : true,

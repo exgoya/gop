@@ -1,7 +1,7 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class Goldilocks {
+public class Common {
 	public String name;
 	public boolean enable;
 	public boolean display;
@@ -11,7 +11,7 @@ public class Goldilocks {
 	public int alertPolicy;
 	public String sql;
 	
-	public Goldilocks(String name, boolean enable, boolean display, boolean diff, int alertColumn, int alertValue,
+	public Common(String name, boolean enable, boolean display, boolean diff, int alertColumn, int alertValue,
 			int alertPolicy, String sql) {
 		super();
 		this.name = name;

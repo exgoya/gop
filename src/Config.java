@@ -7,11 +7,11 @@ import com.google.gson.GsonBuilder;
 
 public class Config {
     public Host host;
-    public Goldilocks[] goldilocks;
-	public Config(Host host, Goldilocks[] goldilocks) {
+    public Common[] common;
+	public Config(Host host, Common[] common) {
 		super();
 		this.host = host;
-		this.goldilocks = goldilocks;
+		this.common = common;
 	}
 	@Override
 	public String toString() {
