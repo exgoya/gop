@@ -5,9 +5,11 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry excluding="src/|resource/|lib/" kind="src" path=""/>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" output="resource" path="resource"/>
 	<classpathentry kind="src" path="lib"/>
-	<classpathentry kind="lib" path="lib/gson-2.9.1.jar"/>
-	<classpathentry kind="lib" path="lib/goldilocks8.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/gson-2.9.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/goldilocks8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
