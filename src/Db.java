@@ -1,5 +1,7 @@
 import java.sql.*;
 
+import com.google.gson.GsonBuilder;
+
 public class Db {
 	Config sConfig;
 	
@@ -7,10 +9,9 @@ public class Db {
 		sConfig = config;
 	}
 	
-	public ResultCommon[] getCommonQuery() throws SQLException {
+	public ResultCommon[] getCommonQuery(Connection con) throws SQLException {
 		
 		ResultCommon[] resultArr = new ResultCommon[sConfig.common.length];
-		Connection con = createConnection();
 		
 		Statement stmt = con.createStatement();
 		for( int i = 0 ; i < sConfig.common.length; i ++ ) {
@@ -22,9 +23,13 @@ public class Db {
 			}
 			
 			while (rs.next()) {
-				resultArr[i] = new ResultCommon(sConfig.common[i].name,rs.getInt(1));
+			    String sysTimestamp = new GsonBuilder()
+	               .setDateFormat("yyyy-MM-dd hh:mm:ss")
+	               .create()
+	               .toJson(new Timestamp(System.currentTimeMillis()));
+				resultArr[i] = new ResultCommon(sConfig.common[i].name,rs.getInt(1),sysTimestamp);
 			}
-			System.out.println(resultArr[i].toString());
+			
 		}
 		return resultArr;
 	}

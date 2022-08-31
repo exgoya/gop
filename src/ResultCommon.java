@@ -5,11 +5,13 @@ public class ResultCommon {
 
 	public String name;
 	public int value;
+	public String timestamp;
 	
-	public ResultCommon(String name, int value) {
+	public ResultCommon(String name, int value, String timestamp) {
 		super();
 		this.name = name;
 		this.value = value;
+		this.timestamp = timestamp;
 	}
 	@Override
 	public String toString() {
