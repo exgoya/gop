@@ -3,7 +3,7 @@
 
 # Log file
 *.log
-out.json
+resource/out.json
 
 # BlueJ files
 *.ctxt
