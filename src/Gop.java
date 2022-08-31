@@ -17,67 +17,84 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class Gop {
+	static boolean gColumn = true;
+
 	public static void main(String[] args)
 			throws FileNotFoundException, IOException, SQLException, InterruptedException {
 
-		boolean first = true;
-
+		File rFile = new File("resource/config.json");
+		File wFile = new File("resource/out.json");
+		
+		// Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		Gson gson = new GsonBuilder().create();	
+		
 		// read config
-		try (FileInputStream fis = new FileInputStream("resource/config.json");
-				InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-				BufferedReader reader = new BufferedReader(isr)) {
-			// Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			Gson gson = new GsonBuilder().create();
-			Config config = gson.fromJson(reader, Config.class);
+		Config config = readAndConv(rFile,Config.class,gson);
 
-			// db
-			Db db = new Db(config);
-			Connection con = db.createConnection();
+		// db
+		Db db = new Db(config);
+		Connection con = db.createConnection();
 
-			File file = new File("resource/out.json");
-		    
-			while (true) {
+		while (true) {
 
-				ResultCommon[] rc = db.getCommonQuery(con);
+			ResultCommon[] rc = db.getCommonQuery(con);
 
-				// write output file (json)
-				String gRc = gson.toJson(rc);
+			// write output file (json)
+			writeJson(rc, gson, wFile);
 
-				FileWriter fw = new FileWriter(file, true);
-			    BufferedWriter bw = new BufferedWriter(fw);
-			    bw.write(gRc);
-			    bw.newLine();
-			    bw.close();
-				// print console (table)
-				String[] column = new String[rc.length];
-				int[] row = new int[rc.length];
+			// print console (table)
+			printTable(rc);
 
-				for (int i = 0; i < rc.length; i++) {
-					column[i] = rc[i].name;
-					row[i] = rc[i].value;
-					// System.out.println(rc[i].toString());
-				}
-
-				if (first == true) {
-					System.out.format("%30s", "time");
-					for (int i = 0; i < row.length; i++) {
-						System.out.format("%15s", column[i]);
-					}
-					System.out.format("%n");
-					first = false;
-				}
-
-				System.out.format("%30s", getTime());
-				for (int i = 0; i < row.length; i++) {
-					System.out.format("%15d", row[i]);
-				}
-				System.out.format("%n");
-				Thread.sleep(1000);
-			}
+			Thread.sleep(1000);
 		}
 	}
 
-	// test
+	private static Config readAndConv(File rFile, Class<Config> class1, Gson gson) throws FileNotFoundException {
+		FileInputStream fis = new FileInputStream(rFile);
+		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+		BufferedReader reader = new BufferedReader(isr);
+
+		return gson.fromJson(reader, Config.class);
+	}
+
+	private static void writeJson(ResultCommon[] rc, Gson gson, File file) throws IOException {
+
+		String gRc = gson.toJson(rc);
+
+		FileWriter fw = new FileWriter(file, true);
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(gRc);
+		bw.newLine();
+		bw.close();
+	}
+
+	private static void printTable(ResultCommon[] rc) {
+		// TODO Auto-generated method stub
+		String[] column = new String[rc.length];
+		int[] row = new int[rc.length];
+
+		for (int i = 0; i < rc.length; i++) {
+			column[i] = rc[i].name;
+			row[i] = rc[i].value;
+			// System.out.println(rc[i].toString());
+		}
+
+		if (gColumn == true) {
+			System.out.format("%30s", "time");
+			for (int i = 0; i < row.length; i++) {
+				System.out.format("%15s", column[i]);
+			}
+			System.out.format("%n");
+			gColumn = false;
+		}
+
+		System.out.format("%30s", getTime());
+		for (int i = 0; i < row.length; i++) {
+			System.out.format("%15d", row[i]);
+		}
+		System.out.format("%n");
+	}
+
 	public static boolean writeFile(File file, boolean append, byte[] file_content) {
 		boolean result;
 		FileOutputStream fos;
