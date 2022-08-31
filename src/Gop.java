@@ -1,23 +1,19 @@
 
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
-
-
 public class Gop {
-	public static void main(String[] args) throws FileNotFoundException, IOException {
+	public static void main(String[] args) throws FileNotFoundException, IOException, SQLException {
 
 		//read config
 		try(FileInputStream fis = new FileInputStream("config.json");
@@ -27,11 +23,15 @@ public class Gop {
 		    Gson gson = new GsonBuilder().create();
 		    Config config = gson.fromJson(reader, Config.class);
 		    
+		    //db 
+		    Db db = new Db(config);
+		    db.getCommonQuery();
+		    
 		    //all print
-		    System.out.println(config.toString());
+		    //System.out.println(config.toString());
 		    //select print
-		    System.out.println(config.host.name);
-		    System.out.println(config.common[1].name);
+		    //System.out.println(config.host.name);
+		    //System.out.println(config.common[1].name);
 		}
 		//test 
 

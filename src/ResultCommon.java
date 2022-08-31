@@ -1,19 +1,21 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class Config {
-    public Host host;
-    public Common[] common;
-	public Config(Host host, Common[] common) {
+public class ResultCommon {
+
+	public String name;
+	public int value;
+	public ResultCommon(String name, int value) {
 		super();
-		this.host = host;
-		this.common = common;
+		this.name = name;
+		this.value = value;
 	}
 	@Override
 	public String toString() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		String json = gson.toJson(this);
 		
-		return json;	
+		return json;
 	}
+	
 }
