@@ -11,7 +11,8 @@
     "enable" : true,
     "display" : true,
     "diff" : true,
-    "sql" : "select stat_value from v$system_sql_stat where stat_name = 'CALL_EXECUTE'"
+    "sql" : "select stat_value from v$system_sql_stat where stat_name = 'CALL_EXECUTE'",
+    "tag" : "sql1"
   }, {
     "name" : "session",
     "enable" : true,
@@ -20,7 +21,8 @@
     "alertColumn" : 1,
     "alertValue": 80,
     "alertPolicy" : 1 ,
-    "sql" : "select count(*) from v$session where connection_type = 'TCP'"
+    "sql" : "select count(*) from v$session where connection_type = 'TCP'",
+    "tag" : "sql1"
   }, {
     "name" : "lock",
     "enable" : true,
@@ -29,7 +31,8 @@
     "alertColumn" : 1,
     "alertValue": 80,
     "alertPolicy" : 1 ,
-    "sql" : "select count(*) from v$lock_wait"
+    "sql" : "select count(*) from v$lock_wait",
+    "tag" : "sql1"
   }, {
     "name" : "long_query",
     "enable" : true,
@@ -38,7 +41,8 @@
     "alertColumn" : 1,
     "alertValue": 80,
     "alertPolicy" : 1 ,
-    "sql" : "select count(*) from v$statement where last_exec_time >= 100000"
+    "sql" : "select count(*) from v$statement where last_exec_time >= 100000",
+    "tag" : "sql1"
   }, {
     "name" : "tbs",
     "enable" : true,
@@ -47,12 +51,14 @@
     "alertColumn" : 1,
     "alertValue": 80,
     "alertPolicy" : 1 ,
-    "sql" : "select to_char((used_data_ext_count/total_ext_count)*100.0, '90.99') from v$tablespace_stat"
+    "sql" : "select to_char((used_data_ext_count/total_ext_count)*100.0, '90.99') from v$tablespace_stat",
+    "tag" : "sql2"
   }, {
     "name" : "ager",
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "sql" : "select split_part(agable_scn_gap,'.',1) from v$agable_info"
+    "sql" : "select split_part(agable_scn_gap,'.',1) from v$agable_info",
+    "tag" : "sql2"
   } ]
 }

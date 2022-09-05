@@ -2,6 +2,9 @@ import java.sql.*;
 
 import com.google.gson.GsonBuilder;
 
+import model.Config;
+import model.ResultCommon;
+
 public class Db {
 	Config sConfig;
 	
@@ -27,7 +30,7 @@ public class Db {
 	               .setDateFormat("yyyy-MM-dd hh:mm:ss")
 	               .create()
 	               .toJson(new Timestamp(System.currentTimeMillis()));
-				resultArr[i] = new ResultCommon(sConfig.common[i].name,rs.getInt(1),sysTimestamp);
+				resultArr[i] = new ResultCommon(sConfig.common[i].name,rs.getInt(1),sConfig.common[i].tag,sysTimestamp);
 			}
 			
 		}

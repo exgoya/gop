@@ -1,4 +1,3 @@
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,24 +11,43 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.ParseException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+
+import model.Config;
+import model.Logs;
+import model.ResultCommon;
 
 public class Gop {
 	static boolean gColumn = true;
 
-	public static void main(String[] args)
-			throws FileNotFoundException, IOException, SQLException, InterruptedException {
+	public static void main(String[] args) throws SQLException, IOException, InterruptedException, JsonSyntaxException, ParseException {
 
 		File rFile = new File("resource/config.json");
 		File wFile = new File("resource/out.json");
-		
+
 		// Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		Gson gson = new GsonBuilder().create();	
+		Gson gson = new GsonBuilder().setLenient().create();
 		
+		int i =0;
+		if(i == 1) {
+			gStampLog(rFile,wFile,gson);
+		}
 		// read config
-		Config config = readAndConv(rFile,Config.class,gson);
+
+		// gop client
+
+		LogCall lc = new LogCall();
+		lc.getHashMap(new File("resource/out.json"), gson);
+	}
+
+	private static void gStampLog(File rFile, File wFile, Gson gson)
+			throws SQLException, IOException, InterruptedException {
+		// TODO Auto-generated method stub
+		Config config = readAndConvConf(rFile, Config.class, gson);
 
 		// db
 		Db db = new Db(config);
@@ -46,10 +64,11 @@ public class Gop {
 			printTable(rc);
 
 			Thread.sleep(1000);
+
 		}
 	}
 
-	private static Config readAndConv(File rFile, Class<Config> class1, Gson gson) throws FileNotFoundException {
+	private static Config readAndConvConf(File rFile, Class<Config> class1, Gson gson) throws FileNotFoundException {
 		FileInputStream fis = new FileInputStream(rFile);
 		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
 		BufferedReader reader = new BufferedReader(isr);
@@ -59,12 +78,14 @@ public class Gop {
 
 	private static void writeJson(ResultCommon[] rc, Gson gson, File file) throws IOException {
 
-		String gRc = gson.toJson(rc);
-
 		FileWriter fw = new FileWriter(file, true);
 		BufferedWriter bw = new BufferedWriter(fw);
-		bw.write(gRc);
-		bw.newLine();
+		for (ResultCommon resultCommon : rc) {
+			String gRc = gson.toJson(resultCommon);
+			bw.write(gRc);
+			// bw.append(",");
+			bw.newLine();
+		}
 		bw.close();
 	}
 
@@ -80,7 +101,7 @@ public class Gop {
 		}
 
 		if (gColumn == true) {
-			System.out.format("%30s", "time");
+			System.out.format("%22s", "time");
 			for (int i = 0; i < row.length; i++) {
 				System.out.format("%15s", column[i]);
 			}
@@ -88,34 +109,11 @@ public class Gop {
 			gColumn = false;
 		}
 
-		System.out.format("%30s", getTime());
+		System.out.format("%22s", getTime());
 		for (int i = 0; i < row.length; i++) {
 			System.out.format("%15d", row[i]);
 		}
 		System.out.format("%n");
-	}
-
-	public static boolean writeFile(File file, boolean append, byte[] file_content) {
-		boolean result;
-		FileOutputStream fos;
-		if (file != null && file.exists() && file_content != null) {
-			try {
-				fos = new FileOutputStream(file, append);
-				try {
-					fos.write(file_content);
-					fos.flush();
-					fos.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-			result = true;
-		} else {
-			result = false;
-		}
-		return result;
 	}
 
 	private static String getTime() {

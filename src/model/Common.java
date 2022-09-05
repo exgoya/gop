@@ -1,3 +1,4 @@
+package model;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -10,9 +11,11 @@ public class Common {
 	public int alertValue;
 	public int alertPolicy;
 	public String sql;
+	public String tag;
+	
 	
 	public Common(String name, boolean enable, boolean display, boolean diff, int alertColumn, int alertValue,
-			int alertPolicy, String sql) {
+			int alertPolicy, String sql, String tag) {
 		super();
 		this.name = name;
 		this.enable = enable;
@@ -22,7 +25,9 @@ public class Common {
 		this.alertValue = alertValue;
 		this.alertPolicy = alertPolicy;
 		this.sql = sql;
+		this.tag = tag;
 	}
+
 
 	@Override
 	public String toString() {
