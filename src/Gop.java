@@ -12,6 +12,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.ParseException;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,6 +22,8 @@ import com.google.gson.JsonSyntaxException;
 import model.Config;
 import model.Logs;
 import model.ResultCommon;
+import service.Db;
+import service.ReadLog;
 
 public class Gop {
 	static boolean gColumn = true;
@@ -31,7 +35,8 @@ public class Gop {
 
 		// Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		Gson gson = new GsonBuilder().setLenient().create();
-		
+	
+		//for test
 		int i =0;
 		if(i == 1) {
 			gStampLog(rFile,wFile,gson);
@@ -40,8 +45,10 @@ public class Gop {
 
 		// gop client
 
-		LogCall lc = new LogCall();
-		lc.getHashMap(new File("resource/out.json"), gson);
+		ReadLog rl = new ReadLog();
+		rl.setTimeMap(new File("resource/out.json"), gson);
+		
+		System.out.println(rl.toString());
 	}
 
 	private static void gStampLog(File rFile, File wFile, Gson gson)
