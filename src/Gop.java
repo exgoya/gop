@@ -29,48 +29,62 @@ import service.ReadLog;
 
 public class Gop {
 	static boolean gColumn = true;
+	static File rFile = null;
 
 	public static void main(String[] args)
 			throws SQLException, IOException, InterruptedException, JsonSyntaxException, ParseException {
-
-		File rFile = new File("resource/config.json");
-		File wFile = new File("resource/out.json");
-
-		// Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		if (args.length < 2) {
+			System.out.println("invalid argument args : "+args.length);
+			System.exit(0);
+		}
+		
+		rFile = new File(args[0]);
 		Gson gson = new GsonBuilder().setLenient().create();
 		Config config = readAndConvConf(rFile, Config.class, gson);
-		// for test
-		int i = 0;
-		if (i == 1) {
-			gStampLog(config,gson,wFile);
+
+		File wFile = new File(config.host.logFile);
+
+		switch (args[1]) {
+		case "demon":
+			gStampLog(config, gson, wFile);
+			break;
+		case "client":
+			ReadLog rl = new ReadLog(new File("resource/out.json"), gson, config);
+			switch (args[2]) {
+			case "all":
+				printTableMap(rl.timeMap);
+				break;
+			case "time":
+				LocalDateTime stTs = stringToDate(args[3]);
+				LocalDateTime edTs = stringToDate(args[4]);
+				rl.setRangeTime(stTs, edTs);
+				printTableMap(rl.rangeTimeMap);
+				break;
+			case "name":
+				break;
+			case "tag":
+				break;
+			default:
+				System.out.println("invalid argument");
+				break;
+			}
+			break;
+		default:
+			System.out.println("invalid argument 1");
+			break;
 		}
 
-		// gop client
-
-		ReadLog rl = new ReadLog(new File("resource/out.json"), gson,config);
-//		System.out.println(rl.toString());
-		Set<LocalDateTime> timeKeys = rl.timeMap.keySet();
-
-		String tag = "sql1";
-		LocalDateTime stTs = stringToDate("2022-09-05 03:14:40");
-		LocalDateTime edTs = stringToDate("2022-09-05 03:15:00");
-		String name = "ager";
-
-		rl.setRangeTime(stTs, edTs);
 //		System.out.println(rl.convString(rl.rangeTimeMap));
-		printTableMap(rl.rangeTimeMap);
-		// rl.getTagList(tag);
-//		rl.getNameList(name);
 	}
 
 	@SuppressWarnings("null")
 	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap) {
 		Set<LocalDateTime> timeKeys = rangeTimeMap.keySet();
-		ResultCommon[] rc = new ResultCommon[1] ;
-		int i =0;
-		
+		ResultCommon[] rc = new ResultCommon[1];
+		int i = 0;
+
 		for (LocalDateTime key : timeKeys) {
-			rc=rangeTimeMap.get(key);
+			rc = rangeTimeMap.get(key);
 			i++;
 			printTable(rc);
 		}
@@ -83,7 +97,7 @@ public class Gop {
 		return localDateTime;
 	}
 
-	private static void gStampLog(Config config ,Gson gson,File wFile )
+	private static void gStampLog(Config config, Gson gson, File wFile)
 			throws SQLException, IOException, InterruptedException {
 
 		// db
@@ -100,7 +114,7 @@ public class Gop {
 			// print console (table)
 			printTable(rc);
 
-			Thread.sleep(1000);
+			Thread.sleep(config.host.timeInterval);
 
 		}
 	}
@@ -140,15 +154,15 @@ public class Gop {
 		int i = 0;
 		if (gColumn == true) {
 			System.out.format("%22s", "time");
-			for ( i=0; i < row.length; i++) {
+			for (i = 0; i < row.length; i++) {
 				System.out.format("%15s", column[i]);
 			}
 			System.out.format("%n");
 			gColumn = false;
 		}
 
-		System.out.format("%22s", rc[rc.length-1].timestamp);
-		
+		System.out.format("%22s", rc[rc.length - 1].timestamp);
+
 		for (int i1 = 0; i1 < row.length; i1++) {
 			System.out.format("%15d", row[i1]);
 		}

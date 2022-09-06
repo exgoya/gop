@@ -25,6 +25,7 @@ public class ReadLog {
 
 	public LinkedHashMap<LocalDateTime, ResultCommon[]> timeMap = new LinkedHashMap<LocalDateTime, ResultCommon[]>();
 	public LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap = new LinkedHashMap<LocalDateTime, ResultCommon[]>();
+	public LinkedHashMap<LocalDateTime, ResultCommon[]> nameMap = new LinkedHashMap<LocalDateTime, ResultCommon[]>();
 
 	public ReadLog(File file, Gson gson, Config config) throws JsonSyntaxException, IOException, ParseException {
 		super();
@@ -87,4 +88,5 @@ public class ReadLog {
 			}
 		}
 	}
+
 }

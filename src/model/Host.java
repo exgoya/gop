@@ -9,7 +9,9 @@ public class Host {
 	public int port;
 	public String user;
 	public String password;
-	
+	public int timeInterval;
+	public String logFile;
+	public String alertFile;
 	
 	public Host(String name, String ip, int port, String user, String password) {
 		super();
@@ -18,6 +20,19 @@ public class Host {
 		this.port = port;
 		this.user = user;
 		this.password = password;
+	}
+
+	public Host(String name, String ip, int port, String user, String password, int timeInterval, String logFile,
+			String alertFile) {
+		super();
+		this.name = name;
+		this.ip = ip;
+		this.port = port;
+		this.user = user;
+		this.password = password;
+		this.timeInterval = timeInterval;
+		this.logFile = logFile;
+		this.alertFile = alertFile;
 	}
 
 	@Override

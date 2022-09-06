@@ -4,7 +4,10 @@
     "ip" : "192.168.0.120",
     "port" : 30009,
     "user" : "test",
-    "password" : "test"
+    "password" : "test",
+    "timeInterval" : 1000,
+    "logFile" : "resource/gopLog.json",
+    "alertFile" : "resource/gopAlert.json"
   },
   "common" : [ {
     "name" : "execute",
