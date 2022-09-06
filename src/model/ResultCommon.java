@@ -18,6 +18,12 @@ public class ResultCommon {
 		this.tag = tag;
 	}
 
+
+	public ResultCommon() {
+		super();
+	}
+
+
 	@Override
 	public String toString() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
