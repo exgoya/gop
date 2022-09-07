@@ -21,7 +21,6 @@
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "alertColumn" : 1,
     "alertValue": 80,
     "alertPolicy" : 1 ,
     "sql" : "select count(*) from v$session where connection_type = 'TCP'",
@@ -31,7 +30,6 @@
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "alertColumn" : 1,
     "alertValue": 80,
     "alertPolicy" : 1 ,
     "sql" : "select count(*) from v$lock_wait",
@@ -41,9 +39,8 @@
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "alertColumn" : 1,
-    "alertValue": 80,
-    "alertPolicy" : 1 ,
+    "alertValue": 0,
+    "alertPolicy" : 3 ,
     "sql" : "select count(*) from v$statement where last_exec_time >= 100000",
     "tag" : "sql1"
   }, {
@@ -51,17 +48,30 @@
     "enable" : true,
     "display" : true,
     "diff" : false,
-    "alertColumn" : 1,
     "alertValue": 80,
     "alertPolicy" : 1 ,
     "sql" : "select to_char((used_data_ext_count/total_ext_count)*100.0, '90.99') from v$tablespace_stat",
     "tag" : "sql2"
   }, {
-    "name" : "ager",
+    "name" : "global-ager",
     "enable" : true,
     "display" : true,
     "diff" : false,
     "sql" : "select split_part(agable_scn_gap,'.',1) from v$agable_info",
+    "tag" : "sql2"
+  }, {
+    "name" : "group-ager",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "sql" : "select split_part(agable_scn_gap,'.',2) from v$agable_info",
+    "tag" : "sql2"
+  }, {
+    "name" : "local-ager",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "sql" : "select split_part(agable_scn_gap,'.',3) from v$agable_info",
     "tag" : "sql2"
   } ]
 }

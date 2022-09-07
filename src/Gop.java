@@ -2,7 +2,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -22,7 +21,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 import model.Config;
-import model.Logs;
 import model.ResultCommon;
 import service.Db;
 import service.ReadLog;
@@ -30,6 +28,16 @@ import service.ReadLog;
 public class Gop {
 	static boolean gColumn = true;
 	static File rFile = null;
+	
+	public static final String ANSI_RESET = "\u001B[0m";
+	public static final String ANSI_BLACK = "\u001B[30m";
+	public static final String ANSI_RED = "\u001B[31m";
+	public static final String ANSI_GREEN = "\u001B[32m";
+	public static final String ANSI_YELLOW = "\u001B[33m";
+	public static final String ANSI_BLUE = "\u001B[34m";
+	public static final String ANSI_PURPLE = "\u001B[35m";
+	public static final String ANSI_CYAN = "\u001B[36m";
+	public static final String ANSI_WHITE = "\u001B[37m";
 
 	public static void main(String[] args)
 			throws SQLException, IOException, InterruptedException, JsonSyntaxException, ParseException {
@@ -42,11 +50,12 @@ public class Gop {
 		Gson gson = new GsonBuilder().setLenient().create();
 		Config config = readAndConvConf(rFile, Config.class, gson);
 
-		File wFile = new File(config.host.logFile);
+		File logFile = new File(config.host.logFile);
+		File alertFile = new File(config.host.alertFile);
 
 		switch (args[1]) {
 		case "demon":
-			gStampLog(config, gson, wFile);
+			gStampLog(config, gson, logFile,alertFile);
 			break;
 		case "client":
 			ReadLog rl = new ReadLog(new File(config.host.logFile), gson, config);
@@ -97,7 +106,7 @@ public class Gop {
 		return localDateTime;
 	}
 
-	private static void gStampLog(Config config, Gson gson, File wFile)
+	private static void gStampLog(Config config, Gson gson, File logFile, File alertFile)
 			throws SQLException, IOException, InterruptedException {
 
 		// db
@@ -109,7 +118,7 @@ public class Gop {
 			ResultCommon[] rc = db.getCommonQuery(con);
 
 			// write output file (json)
-			writeJson(rc, gson, wFile);
+			writeJson(rc, gson, logFile,alertFile);
 
 			// print console (table)
 			printTable(rc);
@@ -127,46 +136,65 @@ public class Gop {
 		return gson.fromJson(reader, Config.class);
 	}
 
-	private static void writeJson(ResultCommon[] rc, Gson gson, File file) throws IOException {
+	private static void writeJson(ResultCommon[] rc, Gson gson, File file, File alertFile) throws IOException {
 
 		FileWriter fw = new FileWriter(file, true);
 		BufferedWriter bw = new BufferedWriter(fw);
+
+		FileWriter alertFw = new FileWriter(alertFile, true);
+		BufferedWriter alertBw = new BufferedWriter(alertFw);
+		
 		for (ResultCommon resultCommon : rc) {
 			String gRc = gson.toJson(resultCommon);
 			bw.write(gRc);
+			if(resultCommon.alert) {
+				alertBw.write(gRc);
+				alertBw.newLine();
+			}
 			// bw.append(",");
 			bw.newLine();
 		}
 		bw.close();
+		alertBw.close();
 	}
 
 	private static void printTable(ResultCommon[] rc) {
 		// TODO Auto-generated method stub
 		String[] column = new String[rc.length];
-		int[] row = new int[rc.length];
+		String[] row = new String[rc.length];
 
 		for (int i = 0; i < rc.length; i++) {
 			column[i] = rc[i].name;
-			row[i] = rc[i].value;
+			row[i] = alertFormat(rc[i].value,rc[i].alert);
 			// System.out.println(rc[i].toString());
 		}
 
 		int i = 0;
 		if (gColumn == true) {
-			System.out.format("%22s", "time");
+			System.out.format("%30s",  ANSI_GREEN+"time"+ANSI_RESET);
 			for (i = 0; i < row.length; i++) {
-				System.out.format("%15s", column[i]);
+				System.out.format("%23s",  ANSI_GREEN+column[i]+ANSI_RESET);
 			}
 			System.out.format("%n");
 			gColumn = false;
 		}
 
-		System.out.format("%22s", rc[rc.length - 1].timestamp);
+		System.out.format("%22s",ANSI_GREEN + rc[rc.length - 1].timestamp+ANSI_RESET);
 
 		for (int i1 = 0; i1 < row.length; i1++) {
-			System.out.format("%15d", row[i1]);
+			System.out.format("%23s", row[i1]);
 		}
 		System.out.format("%n");
+	}
+
+	private static String alertFormat(int value, boolean alert) {
+		String temp = null;
+		if(alert) {
+			temp = ANSI_RED +  String.valueOf(value) + ANSI_RESET ;
+		}else {
+			temp = ANSI_BLUE +  String.valueOf(value) + ANSI_RESET ;
+		}
+		return temp;
 	}
 
 	private static String getTime() {
