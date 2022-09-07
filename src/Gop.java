@@ -88,6 +88,10 @@ public class Gop {
 
 	@SuppressWarnings("null")
 	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap) {
+		if(rangeTimeMap.isEmpty()) {
+			System.out.println("no data!");
+			System.exit(0);
+		}
 		Set<LocalDateTime> timeKeys = rangeTimeMap.keySet();
 		ResultCommon[] rc = new ResultCommon[1];
 		int i = 0;
