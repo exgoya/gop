@@ -33,11 +33,6 @@ public class Gop {
 
 	public static void main(String[] args)
 			throws SQLException, IOException, InterruptedException, JsonSyntaxException, ParseException {
-		for(String arg : args)
-		{
-			System.out.println(arg);
-		}
-		System.out.println("args.length="+args.length);
 		if (args.length < 2) {
 			System.out.println("invalid argument args : "+args.length);
 			System.exit(0);
