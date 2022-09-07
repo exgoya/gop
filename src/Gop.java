@@ -37,6 +37,7 @@ public class Gop {
 		{
 			System.out.println(arg);
 		}
+		System.out.println("args.length="+args.length);
 		if (args.length < 2) {
 			System.out.println("invalid argument args : "+args.length);
 			System.exit(0);
