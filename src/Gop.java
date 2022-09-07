@@ -49,7 +49,7 @@ public class Gop {
 			gStampLog(config, gson, wFile);
 			break;
 		case "client":
-			ReadLog rl = new ReadLog(new File("resource/out.json"), gson, config);
+			ReadLog rl = new ReadLog(new File(config.host.logFile), gson, config);
 			switch (args[2]) {
 			case "all":
 				printTableMap(rl.timeMap);

@@ -26,3 +26,4 @@ replay_pid*
 #/bin/
 /bin/
 resource/out.json
+resource/gopLog.json
