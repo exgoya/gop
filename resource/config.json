@@ -73,5 +73,12 @@
     "diff" : false,
     "sql" : "select split_part(agable_scn_gap,'.',3) from v$agable_info",
     "tag" : "sql2"
-  } ]
+  } , {
+    "name" : "stmt",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "sql" : "select count(*) from v$statement",
+    "tag" : "sql2"
+  }]
 }

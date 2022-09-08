@@ -123,6 +123,7 @@ public class Gop {
 		// db
 		Db db = new Db(config);
 		Connection con = db.createConnection();
+		
 
 		while (true) {
 

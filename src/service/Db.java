@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import model.Common;
 import model.Config;
 import model.ResultCommon;
+import sunje.goldilocks.jdbc.GoldilocksDataSource;
 
 public class Db {
 	Config sConfig;
@@ -69,13 +70,17 @@ public class Db {
 	}
 
 	public Connection createConnection() throws SQLException {
-        String sClass = "sunje.goldilocks.jdbc.GoldilocksDriver";
-        String sUrl = "jdbc:goldilocks://" + sConfig.host.ip + ":" + sConfig.host.port + "/test";
-            try {
-				Class.forName(sClass);
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
-        return DriverManager.getConnection(sUrl, sConfig.host.user, sConfig.host.password);
+//        String sClass = "sunje.goldilocks.jdbc.GoldilocksDriver";
+//        String sUrl = "jdbc:goldilocks://" + sConfig.host.ip + ":" + sConfig.host.port + "/test";
+        GoldilocksDataSource sDataSource = new GoldilocksDataSource();
+        sDataSource.setDatabaseName("gop");
+        sDataSource.setServerName(sConfig.host.ip );
+        sDataSource.setPortNumber(sConfig.host.port);
+        sDataSource.setUser(sConfig.host.user);
+        sDataSource.setPassword(sConfig.host.password);
+        sDataSource.setStatementPoolOn( true );
+        sDataSource.setStatementPoolSize( 20 );
+
+        return sDataSource.getConnection();
 	}
 }
