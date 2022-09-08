@@ -105,9 +105,16 @@ public class Gop {
 
 	private static LocalDateTime stringToDate(String startSearchKey) {
 
-		DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-		LocalDateTime localDateTime = LocalDateTime.from(formatDateTime.parse(startSearchKey));
+		try {
+			DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			LocalDateTime localDateTime = LocalDateTime.from(formatDateTime.parse(startSearchKey));
 		return localDateTime;
+		} catch (java.time.format.DateTimeParseException e) {
+			// TODO: handle exceptionA
+			System.out.println("invalid time : " +startSearchKey);
+			System.exit(0);
+		}
+		return null;
 	}
 
 	private static void gStampLog(Config config, Gson gson, File logFile, File alertFile)
@@ -126,7 +133,7 @@ public class Gop {
 
 			// print console (table)
 			printTable(rc);
-			rc=null;
+			rc = null;
 			Thread.sleep(config.host.timeInterval);
 
 		}
@@ -168,25 +175,38 @@ public class Gop {
 		String[] row = new String[rc.length];
 
 		for (int i = 0; i < rc.length; i++) {
-			column[i] = rc[i].name;
-			row[i] = alertFormat(rc[i].value, rc[i].alert);
-			// System.out.println(rc[i].toString());
+			if (rc[i] != null) {
+				column[i] = rc[i].name;
+				row[i] = alertFormat(rc[i].value, rc[i].alert);
+				// System.out.println(rc[i].toString());
+			}
 		}
 
 		int i = 0;
 		if (gColumn == true) {
 			System.out.format("%30s", ANSI_GREEN + "time" + ANSI_RESET);
 			for (i = 0; i < row.length; i++) {
-				System.out.format("%23s", ANSI_GREEN + column[i] + ANSI_RESET);
+				if (column[i] != null) {
+					System.out.format("%23s", ANSI_GREEN + column[i] + ANSI_RESET);
+				}
 			}
 			System.out.format("%n");
 			gColumn = false;
 		}
 
-		System.out.format("%22s", ANSI_GREEN + rc[rc.length - 1].timestamp + ANSI_RESET);
+		for (i = 0; i < rc.length; i++) {
+			if (rc[i] != null) {
+				// System.out.println(rc[i].toString());
+				System.out.format("%22s", ANSI_GREEN + rc[i].timestamp + ANSI_RESET);
+				break;
+			}
+		}
+ 
 
-		for (int i1 = 0; i1 < row.length; i1++) {
-			System.out.format("%23s", row[i1]);
+		for (i = 0; i < row.length; i++) {
+			if (row[i] != null) {
+				System.out.format("%23s", row[i]);
+			}
 		}
 		System.out.format("%n");
 	}

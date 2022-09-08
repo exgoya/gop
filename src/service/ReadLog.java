@@ -77,41 +77,61 @@ public class ReadLog {
 	}
 
 	public void setRangeTimeMap(LocalDateTime stTs, LocalDateTime edTs) {
+		boolean exit = true;
 		Set<LocalDateTime> timeKeys = timeMap.keySet();
 		for (LocalDateTime key : timeKeys) {
 			if (key.isAfter(stTs) || key.isEqual(stTs)) {
 				if (key.isBefore(edTs) || key.isEqual(edTs)) {
+					exit = false;
 					rangeTimeMap.put(key, timeMap.get(key));
 				}
 			}
+			if (exit) {
+				System.out.println("time start :" + stTs + " end : "+ edTs+" is not valid");
+				System.exit(0);
+			}
+	
 		}
 	}
 
 	public void setNameMap(String name) {
+		boolean exit = true;
 		Set<LocalDateTime> timeKeys = timeMap.keySet();
 		for (LocalDateTime key : timeKeys) {
-			ResultCommon[] rc =timeMap.get(key);
+			ResultCommon[] rc = timeMap.get(key);
 			ResultCommon[] tempRc = new ResultCommon[1];
 			for (int i = 0; i < rc.length; i++) {
-				if(rc[i].name.equals(name)) {
-					tempRc[0]=rc[i];
-				};
+				if (rc[i].name.equals(name)) {
+					tempRc[0] = rc[i];
+					exit = false;
+				}
+				;
+			}
+			if (exit) {
+				System.out.println("name :" + name + " is not valid");
+				System.exit(0);
 			}
 			nameMap.put(key, tempRc);
 		}
 	}
 
 	public void setTagMap(String tag) {
+		boolean exit = true;
 		Set<LocalDateTime> timeKeys = timeMap.keySet();
 		for (LocalDateTime key : timeKeys) {
-			ResultCommon[] rc =timeMap.get(key);
-			ResultCommon[] tempRc = new ResultCommon[1];
+			ResultCommon[] rc = timeMap.get(key);
 			for (int i = 0; i < rc.length; i++) {
-				if(rc[i].name.equals(tag)) {
-					tempRc[0]=rc[i];
-				};
+				if (rc[i].tag.equals(tag) == false) {
+					rc[i] = null;
+				}else {
+					exit = false;
+				}
 			}
-			tagMap.put(key, tempRc);
+			if (exit) {
+				System.out.println("tag :" + tag + " is not valid");
+				System.exit(0);
+			}
+			tagMap.put(key, rc);
 		}
 	}
 }
