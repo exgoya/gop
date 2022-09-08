@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,7 +27,7 @@ import service.ReadLog;
 public class Gop {
 	static boolean gColumn = true;
 	static File rFile = null;
-	
+
 	public static final String ANSI_RESET = "\u001B[0m";
 	public static final String ANSI_BLACK = "\u001B[30m";
 	public static final String ANSI_RED = "\u001B[31m";
@@ -42,10 +41,10 @@ public class Gop {
 	public static void main(String[] args)
 			throws SQLException, IOException, InterruptedException, JsonSyntaxException, ParseException {
 		if (args.length < 2) {
-			System.out.println("invalid argument args : "+args.length);
+			System.out.println("invalid argument args : " + args.length);
 			System.exit(0);
 		}
-		
+
 		rFile = new File(args[0]);
 		Gson gson = new GsonBuilder().setLenient().create();
 		Config config = readAndConvConf(rFile, Config.class, gson);
@@ -55,7 +54,7 @@ public class Gop {
 
 		switch (args[1]) {
 		case "demon":
-			gStampLog(config, gson, logFile,alertFile);
+			gStampLog(config, gson, logFile, alertFile);
 			break;
 		case "client":
 			ReadLog rl = new ReadLog(new File(config.host.logFile), gson, config);
@@ -66,12 +65,18 @@ public class Gop {
 			case "time":
 				LocalDateTime stTs = stringToDate(args[3]);
 				LocalDateTime edTs = stringToDate(args[4]);
-				rl.setRangeTime(stTs, edTs);
+				rl.setRangeTimeMap(stTs, edTs);
 				printTableMap(rl.rangeTimeMap);
 				break;
 			case "name":
+				String name = args[3];
+				rl.setNameMap(name);
+				printTableMap(rl.nameMap);
 				break;
 			case "tag":
+				String tag = args[3];
+				rl.setTagMap(tag);
+				printTableMap(rl.tagMap);
 				break;
 			default:
 				System.out.println("invalid argument");
@@ -82,23 +87,18 @@ public class Gop {
 			System.out.println("invalid argument 1");
 			break;
 		}
-
 //		System.out.println(rl.convString(rl.rangeTimeMap));
 	}
 
-	@SuppressWarnings("null")
 	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap) {
-		if(rangeTimeMap.isEmpty()) {
+		if (rangeTimeMap.isEmpty()) {
 			System.out.println("no data!");
 			System.exit(0);
 		}
 		Set<LocalDateTime> timeKeys = rangeTimeMap.keySet();
 		ResultCommon[] rc = new ResultCommon[1];
-		int i = 0;
-
 		for (LocalDateTime key : timeKeys) {
 			rc = rangeTimeMap.get(key);
-			i++;
 			printTable(rc);
 		}
 	}
@@ -122,11 +122,11 @@ public class Gop {
 			ResultCommon[] rc = db.getCommonQuery(con);
 
 			// write output file (json)
-			writeJson(rc, gson, logFile,alertFile);
+			writeJson(rc, gson, logFile, alertFile);
 
 			// print console (table)
 			printTable(rc);
-
+			rc=null;
 			Thread.sleep(config.host.timeInterval);
 
 		}
@@ -147,11 +147,11 @@ public class Gop {
 
 		FileWriter alertFw = new FileWriter(alertFile, true);
 		BufferedWriter alertBw = new BufferedWriter(alertFw);
-		
+
 		for (ResultCommon resultCommon : rc) {
 			String gRc = gson.toJson(resultCommon);
 			bw.write(gRc);
-			if(resultCommon.alert) {
+			if (resultCommon.alert) {
 				alertBw.write(gRc);
 				alertBw.newLine();
 			}
@@ -169,21 +169,21 @@ public class Gop {
 
 		for (int i = 0; i < rc.length; i++) {
 			column[i] = rc[i].name;
-			row[i] = alertFormat(rc[i].value,rc[i].alert);
+			row[i] = alertFormat(rc[i].value, rc[i].alert);
 			// System.out.println(rc[i].toString());
 		}
 
 		int i = 0;
 		if (gColumn == true) {
-			System.out.format("%30s",  ANSI_GREEN+"time"+ANSI_RESET);
+			System.out.format("%30s", ANSI_GREEN + "time" + ANSI_RESET);
 			for (i = 0; i < row.length; i++) {
-				System.out.format("%23s",  ANSI_GREEN+column[i]+ANSI_RESET);
+				System.out.format("%23s", ANSI_GREEN + column[i] + ANSI_RESET);
 			}
 			System.out.format("%n");
 			gColumn = false;
 		}
 
-		System.out.format("%22s",ANSI_GREEN + rc[rc.length - 1].timestamp+ANSI_RESET);
+		System.out.format("%22s", ANSI_GREEN + rc[rc.length - 1].timestamp + ANSI_RESET);
 
 		for (int i1 = 0; i1 < row.length; i1++) {
 			System.out.format("%23s", row[i1]);
@@ -193,18 +193,11 @@ public class Gop {
 
 	private static String alertFormat(int value, boolean alert) {
 		String temp = null;
-		if(alert) {
-			temp = ANSI_RED +  String.valueOf(value) + ANSI_RESET ;
-		}else {
-			temp = ANSI_BLUE +  String.valueOf(value) + ANSI_RESET ;
+		if (alert) {
+			temp = ANSI_RED + String.valueOf(value) + ANSI_RESET;
+		} else {
+			temp = ANSI_BLUE + String.valueOf(value) + ANSI_RESET;
 		}
 		return temp;
-	}
-
-	private static String getTime() {
-		// TODO Auto-generated method stub
-		String sysTimeStamp = new GsonBuilder().setDateFormat("yyyy-MM-dd hh:mm:ss").create()
-				.toJson(new Timestamp(System.currentTimeMillis()));
-		return sysTimeStamp;
 	}
 }

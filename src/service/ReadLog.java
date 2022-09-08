@@ -6,14 +6,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Set;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -26,6 +22,7 @@ public class ReadLog {
 	public LinkedHashMap<LocalDateTime, ResultCommon[]> timeMap = new LinkedHashMap<LocalDateTime, ResultCommon[]>();
 	public LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap = new LinkedHashMap<LocalDateTime, ResultCommon[]>();
 	public LinkedHashMap<LocalDateTime, ResultCommon[]> nameMap = new LinkedHashMap<LocalDateTime, ResultCommon[]>();
+	public LinkedHashMap<LocalDateTime, ResultCommon[]> tagMap = new LinkedHashMap<LocalDateTime, ResultCommon[]>();
 
 	public ReadLog(File file, Gson gson, Config config) throws JsonSyntaxException, IOException, ParseException {
 		super();
@@ -39,12 +36,13 @@ public class ReadLog {
 		String line = "";
 
 		int i = 0;
-		ResultCommon[] rc = new ResultCommon[config.common.length];;
+		ResultCommon[] rc = new ResultCommon[config.common.length];
+		;
 
 		while ((line = reader.readLine()) != null) {
 			ResultCommon obj = gson.fromJson(line, ResultCommon.class);
 			LocalDateTime ts = stringToTimestamp(obj.timestamp, gson);
-			if ( i >= config.common.length ) {
+			if (i >= config.common.length) {
 				rc = new ResultCommon[config.common.length];
 				i = 0;
 			}
@@ -78,7 +76,7 @@ public class ReadLog {
 
 	}
 
-	public void setRangeTime(LocalDateTime stTs, LocalDateTime edTs) {
+	public void setRangeTimeMap(LocalDateTime stTs, LocalDateTime edTs) {
 		Set<LocalDateTime> timeKeys = timeMap.keySet();
 		for (LocalDateTime key : timeKeys) {
 			if (key.isAfter(stTs) || key.isEqual(stTs)) {
@@ -86,6 +84,34 @@ public class ReadLog {
 					rangeTimeMap.put(key, timeMap.get(key));
 				}
 			}
+		}
+	}
+
+	public void setNameMap(String name) {
+		Set<LocalDateTime> timeKeys = timeMap.keySet();
+		for (LocalDateTime key : timeKeys) {
+			ResultCommon[] rc =timeMap.get(key);
+			ResultCommon[] tempRc = new ResultCommon[1];
+			for (int i = 0; i < rc.length; i++) {
+				if(rc[i].name.equals(name)) {
+					tempRc[0]=rc[i];
+				};
+			}
+			nameMap.put(key, tempRc);
+		}
+	}
+
+	public void setTagMap(String tag) {
+		Set<LocalDateTime> timeKeys = timeMap.keySet();
+		for (LocalDateTime key : timeKeys) {
+			ResultCommon[] rc =timeMap.get(key);
+			ResultCommon[] tempRc = new ResultCommon[1];
+			for (int i = 0; i < rc.length; i++) {
+				if(rc[i].name.equals(tag)) {
+					tempRc[0]=rc[i];
+				};
+			}
+			tagMap.put(key, tempRc);
 		}
 	}
 }
