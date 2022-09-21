@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.LocalDateTime;
@@ -123,11 +124,11 @@ public class Gop {
 		// db
 		Db db = new Db(config);
 		Connection con = db.createConnection();
-		
+		PreparedStatement[] arrPstmt = db.createPstmt(con);
 
 		while (true) {
 
-			ResultCommon[] rc = db.getCommonQuery(con);
+			ResultCommon[] rc = db.getCommonQuery(arrPstmt);
 
 			// write output file (json)
 			writeJson(rc, gson, logFile, alertFile);

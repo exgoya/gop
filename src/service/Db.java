@@ -1,5 +1,10 @@
 package service;
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
 import java.sql.*;
+import java.util.Calendar;
 
 import com.google.gson.GsonBuilder;
 
@@ -14,15 +19,27 @@ public class Db {
 	public Db(Config config) {
 		sConfig = config;
 	}
+
+	public PreparedStatement[] createPstmt(Connection con) throws SQLException {
+		Boolean first = true;
+		
+		PreparedStatement[] arrPstmt=new PreparedStatement[sConfig.common.length];
+		for( int i = 0 ; i < sConfig.common.length; i ++ ) {
+			arrPstmt[i]=con.prepareStatement(sConfig.common[i].sql);
+		}
+		return arrPstmt;
 	
-	public ResultCommon[] getCommonQuery(Connection con) throws SQLException {
+	}		
+	public ResultCommon[] getCommonQuery(PreparedStatement[] arrPstmt) throws SQLException {
 		
 		ResultCommon[] resultArr = new ResultCommon[sConfig.common.length];
-		
-		Statement stmt = con.createStatement();
+
 		for( int i = 0 ; i < sConfig.common.length; i ++ ) {
 			
-			ResultSet rs = stmt.executeQuery(sConfig.common[i].sql);
+			//Statement stmt = con.createStatement();
+
+			ResultSet rs = arrPstmt[i].executeQuery();
+			//ResultSet rs = stmt.executeQuery(sConfig.common[i].sql);
 			ResultSetMetaData rsMeta = rs.getMetaData();
 			if(rsMeta.getColumnCount()!=1) {
 				System.out.println("not support multiple column query _ Query name : " + sConfig.common[i].name);
@@ -40,11 +57,11 @@ public class Db {
 			    
 				resultArr[i] = new ResultCommon(sConfig.common[i].name,queryValue,sConfig.common[i].tag,sysTimestamp,alert);
 			}
-			
+			rs.close();
 		}
 		return resultArr;
 	}
-	
+
 	private boolean alertCheck(Common common, int queryValue) {
 		switch (common.alertPolicy) {
 		case 1:
@@ -83,4 +100,8 @@ public class Db {
 
         return sDataSource.getConnection();
 	}
+
+
+
+
 }
