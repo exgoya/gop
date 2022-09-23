@@ -218,7 +218,7 @@ public class Gop {
 		if (alert) {
 			temp = ANSI_RED + String.valueOf(value) + ANSI_RESET;
 		} else {
-			temp = ANSI_BLUE + String.valueOf(value) + ANSI_RESET;
+			temp = ANSI_WHITE + String.valueOf(value) + ANSI_RESET;
 		}
 		return temp;
 	}
