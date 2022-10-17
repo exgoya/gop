@@ -82,7 +82,7 @@
     "sql" : "select count(*) from v$statement",
     "tag" : "sql2"
   },{
-    "name" : "disk",
+    "name" : "disk-/home",
     "enable" : true,
     "display" : true,
     "diff" : true,
@@ -90,13 +90,13 @@
     "tag" : "sql1",
     "isOs" : true 
   }, {
-    "name" : "MemAvailable",
+    "name" : "MemAvailable-mb",
     "enable" : true,
     "display" : true,
     "diff" : false,
     "alertValue": 80,
     "alertPolicy" : 1 ,
-    "sql" : "df -h |grep /home |awk '{print $5}' |grep -o '[0-9]'*",
+    "sql" : "cat /proc/meminfo |grep MemAvailable|awk {'print int($2/1024)'}",
     "tag" : "sql1",
     "isOs" : true 
   }
