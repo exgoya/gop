@@ -17,5 +17,4 @@ public class Logs {
 		
 		return json;	
 	}
-	
 }

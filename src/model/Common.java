@@ -11,10 +11,11 @@ public class Common {
 	public int alertPolicy;
 	public String sql;
 	public String tag;
+	public boolean isOs;
 	
 	
 	public Common(String name, boolean enable, boolean display, boolean diff,  int alertValue,
-			int alertPolicy, String sql, String tag) {
+			int alertPolicy, String sql, String tag, boolean isOs) {
 		super();
 		this.name = name;
 		this.enable = enable;
@@ -24,6 +25,7 @@ public class Common {
 		this.alertPolicy = alertPolicy;
 		this.sql = sql;
 		this.tag = tag;
+		this.isOs=isOs;
 	}
 
 

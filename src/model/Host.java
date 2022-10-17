@@ -12,6 +12,7 @@ public class Host {
 	public int timeInterval;
 	public String logFile;
 	public String alertFile;
+	public boolean print;
 	
 	public Host(String name, String ip, int port, String user, String password) {
 		super();
@@ -23,7 +24,7 @@ public class Host {
 	}
 
 	public Host(String name, String ip, int port, String user, String password, int timeInterval, String logFile,
-			String alertFile) {
+			String alertFile, boolean print) {
 		super();
 		this.name = name;
 		this.ip = ip;
@@ -33,6 +34,7 @@ public class Host {
 		this.timeInterval = timeInterval;
 		this.logFile = logFile;
 		this.alertFile = alertFile;
+		this.print = print;
 	}
 
 	@Override

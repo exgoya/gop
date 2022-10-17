@@ -129,13 +129,19 @@ public class Gop {
 		while (true) {
 
 			ResultCommon[] rc = db.getCommonQuery(arrPstmt);
+			//ResultCommon[] rc2 = db.getOsQuery();
 
 			// write output file (json)
 			writeJson(rc, gson, logFile, alertFile);
+			//writeJson(rc2, gson, logFile, alertFile);
 
 			// print console (table)
-			printTable(rc);
+			if(config.host.print) {
+				printTable(rc);
+				//printTable(rc2);
+			}
 			rc = null;
+			//rc2 = null;
 			Thread.sleep(config.host.timeInterval);
 
 		}

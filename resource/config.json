@@ -2,12 +2,13 @@
   "host" : {
     "name" : "g1n1",
     "ip" : "192.168.0.120",
-    "port" : 30009,
+    "port" : "30009",
     "user" : "test",
     "password" : "test",
     "timeInterval" : 1000,
     "logFile" : "resource/gopLog.json",
-    "alertFile" : "resource/gopAlert.json"
+    "alertFile" : "resource/gopAlert.json",
+    "print" : "true"
   },
   "common" : [ {
     "name" : "execute",
@@ -80,5 +81,23 @@
     "diff" : false,
     "sql" : "select count(*) from v$statement",
     "tag" : "sql2"
-  }]
-}
+  },{
+    "name" : "disk",
+    "enable" : true,
+    "display" : true,
+    "diff" : true,
+    "sql" : "df -h |grep /home |awk '{print $5}' |grep -o '[0-9]'*",
+    "tag" : "sql1",
+    "isOs" : true 
+  }, {
+    "name" : "MemAvailable",
+    "enable" : true,
+    "display" : true,
+    "diff" : false,
+    "alertValue": 80,
+    "alertPolicy" : 1 ,
+    "sql" : "df -h |grep /home |awk '{print $5}' |grep -o '[0-9]'*",
+    "tag" : "sql1",
+    "isOs" : true 
+  }
+]}

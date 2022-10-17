@@ -1,16 +1,13 @@
+package service;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestOs {
-
-	public static void main(String[] args) {
-		execute("cat /proc/meminfo |grep Mem");
-	}
-
-	private static void execute(String cmd) {
+public class ReadOs {
+	int execute(String cmd) {
 		Process process = null;
 		Runtime runtime = Runtime.getRuntime();
 		StringBuffer successOutput = new StringBuffer();
@@ -18,6 +15,7 @@ public class TestOs {
 		BufferedReader successBufferReader = null;
 		BufferedReader errorBufferReader = null;
 		String msg = null;
+		int out = 0;
 
 		List<String> cmdList = new ArrayList<String>();
 
@@ -28,7 +26,7 @@ public class TestOs {
 
 		cmdList.add(cmd);
 		String[] array = cmdList.toArray(new String[cmdList.size()]);
-		System.out.println(array[0]);
+	//	System.out.println(array[0]);
 
 		try {
 
@@ -53,8 +51,11 @@ public class TestOs {
 
 			// shell실행이정상종료되었을경우
 			if (process.exitValue() == 0) {
-				System.out.println("성공");
-				System.out.println(successOutput.toString());
+				//System.out.println("성공");
+				msg = successOutput.toString().trim();
+				//System.out.println(msg);
+				out= Integer.parseInt(msg);
+				
 			} else {
 				// shell실행이비정상종료되었을경우
 				System.out.println("비정상종료");
@@ -83,5 +84,6 @@ public class TestOs {
 				e1.printStackTrace();
 			}
 		}
+		return out;
 	}
 }

@@ -1,10 +1,5 @@
 package service;
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
 import java.sql.*;
-import java.util.Calendar;
 
 import com.google.gson.GsonBuilder;
 
@@ -21,11 +16,12 @@ public class Db {
 	}
 
 	public PreparedStatement[] createPstmt(Connection con) throws SQLException {
-		Boolean first = true;
 		
 		PreparedStatement[] arrPstmt=new PreparedStatement[sConfig.common.length];
 		for( int i = 0 ; i < sConfig.common.length; i ++ ) {
+			if(!sConfig.common[i].isOs) {
 			arrPstmt[i]=con.prepareStatement(sConfig.common[i].sql);
+			}
 		}
 		return arrPstmt;
 	
@@ -38,7 +34,24 @@ public class Db {
 			
 			//Statement stmt = con.createStatement();
 
-			ResultSet rs = arrPstmt[i].executeQuery();
+			if(sConfig.common[i].isOs) {
+				boolean alert = false;
+			  int queryValue = 0;
+			
+			    String sysTimestamp = new GsonBuilder()
+	               .setDateFormat("yyyy-MM-dd hh:mm:ss")
+	               .create()
+	               .toJson(new Timestamp(System.currentTimeMillis()));
+			    
+			   ReadOs oc = new ReadOs(); 
+			    queryValue = oc.execute(sConfig.common[i].sql);
+			    
+			    alert = alertCheck(sConfig.common[i],queryValue);
+			    
+				resultArr[i] = new ResultCommon(sConfig.common[i].name,queryValue,sConfig.common[i].tag,sysTimestamp,alert);
+	
+			}else {
+				ResultSet rs = arrPstmt[i].executeQuery();
 			//ResultSet rs = stmt.executeQuery(sConfig.common[i].sql);
 			ResultSetMetaData rsMeta = rs.getMetaData();
 			if(rsMeta.getColumnCount()!=1) {
@@ -58,6 +71,7 @@ public class Db {
 				resultArr[i] = new ResultCommon(sConfig.common[i].name,queryValue,sConfig.common[i].tag,sysTimestamp,alert);
 			}
 			rs.close();
+			}
 		}
 		return resultArr;
 	}
@@ -100,6 +114,8 @@ public class Db {
 
         return sDataSource.getConnection();
 	}
+
+
 
 
 
