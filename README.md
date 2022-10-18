@@ -11,6 +11,9 @@ sample use  >>
 - resource/config.json clinen tag tag1
 - resource/config.json client all
 
+ex )
+ java -Xmx100M -jar gop.jar demon
+
 # alert policy :
 - 0 : not use ( default )
 - 1 : is greater then alertValue ( query result > alertValue )
