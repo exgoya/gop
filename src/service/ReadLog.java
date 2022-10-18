@@ -77,19 +77,19 @@ public class ReadLog {
 	}
 
 	public void setRangeTimeMap(LocalDateTime stTs, LocalDateTime edTs) {
-		boolean exit = true;
+		//boolean exit = true;
 		Set<LocalDateTime> timeKeys = timeMap.keySet();
 		for (LocalDateTime key : timeKeys) {
 			if (key.isAfter(stTs) || key.isEqual(stTs)) {
 				if (key.isBefore(edTs) || key.isEqual(edTs)) {
-					exit = false;
+//					exit = false;
 					rangeTimeMap.put(key, timeMap.get(key));
 				}
 			}
-			if (exit) {
-				System.out.println("time start :" + stTs + " end : "+ edTs+" is not valid");
-				System.exit(0);
-			}
+//			if (exit) {
+	//			System.out.println("time start :" + stTs + " end : "+ edTs+" is not valid");
+		//		System.exit(0);
+			//}
 	
 		}
 	}
