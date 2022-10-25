@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -21,6 +22,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 import model.Config;
+import model.Data;
 import model.ResultCommon;
 import service.Db;
 import service.ReadLog;
@@ -97,22 +99,22 @@ public class Gop {
 			System.exit(0);
 		}
 		Set<LocalDateTime> timeKeys = rangeTimeMap.keySet();
-		ResultCommon[] rc = new ResultCommon[1];
 		for (LocalDateTime key : timeKeys) {
-			rc = rangeTimeMap.get(key);
-			printTable(rc);
+			// System.out.println(key);
+			Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
+			printTable(data);
 		}
 	}
 
 	private static LocalDateTime stringToDate(String startSearchKey) {
 
 		try {
-			DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 			LocalDateTime localDateTime = LocalDateTime.from(formatDateTime.parse(startSearchKey));
-		return localDateTime;
+			return localDateTime;
 		} catch (java.time.format.DateTimeParseException e) {
 			// TODO: handle exceptionA
-			System.out.println("invalid time : " +startSearchKey);
+			System.out.println("invalid time : " + startSearchKey);
 			System.exit(0);
 		}
 		return null;
@@ -128,23 +130,30 @@ public class Gop {
 
 		while (true) {
 
-			ResultCommon[] rc = db.getCommonQuery(arrPstmt);
-			//ResultCommon[] rc2 = db.getOsQuery();
+			Data data = db.getCommonQuery(arrPstmt);
+			// ResultCommon[] rc2 = db.getOsQuery();
 
 			// write output file (json)
-			writeJson(rc, gson, logFile, alertFile);
-			//writeJson(rc2, gson, logFile, alertFile);
+			writeJson(data, gson, logFile, alertFile);
+			// writeJson(rc2, gson, logFile, alertFile);
 
 			// print console (table)
-			if(config.host.print) {
-				printTable(rc);
-				//printTable(rc2);
+			if (config.host.print) {
+				printTable(data);
+				// printTable(rc2);
 			}
-			rc = null;
-			//rc2 = null;
+			data = null;
+			// rc2 = null;
 			Thread.sleep(config.host.timeInterval);
-
 		}
+	}
+
+	private static String timestampToString(LocalDateTime timestamp) {
+		// TODO Auto-generated method stub
+		String tempTime = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss.SSS").create()
+				.toJson(Timestamp.valueOf(timestamp));
+
+		return tempTime;
 	}
 
 	private static Config readAndConvConf(File rFile, Class<Config> class1, Gson gson) throws FileNotFoundException {
@@ -155,7 +164,7 @@ public class Gop {
 		return gson.fromJson(reader, Config.class);
 	}
 
-	private static void writeJson(ResultCommon[] rc, Gson gson, File file, File alertFile) throws IOException {
+	private static void writeJson(Data data, Gson gson, File file, File alertFile) throws IOException {
 
 		FileWriter fw = new FileWriter(file, true);
 		BufferedWriter bw = new BufferedWriter(fw);
@@ -163,36 +172,37 @@ public class Gop {
 		FileWriter alertFw = new FileWriter(alertFile, true);
 		BufferedWriter alertBw = new BufferedWriter(alertFw);
 
-		for (ResultCommon resultCommon : rc) {
-			String gRc = gson.toJson(resultCommon);
-			bw.write(gRc);
-			if (resultCommon.alert) {
+//		for (ResultCommon resultCommon : data.rc) {
+		String gRc = gson.toJson(data);
+		bw.write(gRc);
+		for (int i = 0; i < data.rc.length; i++) {
+			if (data.rc[i].alert) {
 				alertBw.write(gRc);
 				alertBw.newLine();
 			}
-			// bw.append(",");
-			bw.newLine();
 		}
+		// bw.append(",");
+		bw.newLine();
 		bw.close();
 		alertBw.close();
 	}
 
-	private static void printTable(ResultCommon[] rc) {
+	private static void printTable(Data data) {
 		// TODO Auto-generated method stub
-		String[] column = new String[rc.length];
-		String[] row = new String[rc.length];
+		String[] column = new String[data.rc.length];
+		String[] row = new String[data.rc.length];
 
-		for (int i = 0; i < rc.length; i++) {
-			if (rc[i] != null) {
-				column[i] = rc[i].name;
-				row[i] = alertFormat(rc[i].value, rc[i].alert);
+		for (int i = 0; i < data.rc.length; i++) {
+			if (data.rc[i] != null) {
+				column[i] = data.rc[i].name;
+				row[i] = alertFormat(data.rc[i].value, data.rc[i].alert);
 				// System.out.println(rc[i].toString());
 			}
 		}
 
 		int i = 0;
 		if (gColumn == true) {
-			System.out.format("%30s", ANSI_GREEN + "time" + ANSI_RESET);
+			System.out.format("%34s", ANSI_GREEN + "time" + ANSI_RESET);
 			for (i = 0; i < row.length; i++) {
 				if (column[i] != null) {
 					System.out.format("%23s", ANSI_GREEN + column[i] + ANSI_RESET);
@@ -202,14 +212,13 @@ public class Gop {
 			gColumn = false;
 		}
 
-		for (i = 0; i < rc.length; i++) {
-			if (rc[i] != null) {
+		for (i = 0; i < data.rc.length; i++) {
+			if (data.rc[i] != null) {
 				// System.out.println(rc[i].toString());
-				System.out.format("%22s", ANSI_GREEN + rc[i].timestamp + ANSI_RESET);
+				System.out.format("%22s", ANSI_GREEN + data.time + ANSI_RESET);
 				break;
 			}
 		}
- 
 
 		for (i = 0; i < row.length; i++) {
 			if (row[i] != null) {

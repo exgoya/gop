@@ -7,16 +7,14 @@ public class ResultCommon {
 
 	public String name;
 	public int value;
-	public String timestamp;
 	public String tag;
 	public boolean alert;
 
 
-	public ResultCommon(String name, int value,  String tag,String timestamp, boolean alert) {
+	public ResultCommon(String name, int value,  String tag, boolean alert) {
 		super();
 		this.name = name;
 		this.value = value;
-		this.timestamp = timestamp;
 		this.tag = tag;
 		this.alert = alert;
 	}

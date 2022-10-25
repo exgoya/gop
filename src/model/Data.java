@@ -1,20 +1,23 @@
 package model;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class Logs {
-	public ResultCommon[] logs;
+public class Data {
+	public String time;
+	public ResultCommon rc[];
 
-	public Logs(ResultCommon[] logs) {
+	public Data(String time, ResultCommon[] resultArr) {
 		super();
-		this.logs = logs;
+		this.time = time;
+		this.rc = resultArr;
 	}
-	
+
 	@Override
 	public String toString() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		String json = gson.toJson(this);
-		
-		return json;	
+
+		return json;
 	}
 }

@@ -6,15 +6,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 import model.Config;
+import model.Data;
 import model.ResultCommon;
 
 public class ReadLog {
@@ -37,16 +40,17 @@ public class ReadLog {
 
 		int i = 0;
 		ResultCommon[] rc = new ResultCommon[config.common.length];
-		;
 
 		while ((line = reader.readLine()) != null) {
-			ResultCommon obj = gson.fromJson(line, ResultCommon.class);
-			LocalDateTime ts = stringToTimestamp(obj.timestamp, gson);
+			Data obj = gson.fromJson(line, Data.class);
+			LocalDateTime ts = stringToTimestamp(obj.time, gson);
+			// if (i >= config.common.length) {
 			if (i >= config.common.length) {
 				rc = new ResultCommon[config.common.length];
 				i = 0;
 			}
-			rc[i] = obj;
+			// rc[i] = obj.rc[i];
+			rc = obj.rc;
 			timeMap.put(ts, rc);
 			i++;
 		}
@@ -67,17 +71,13 @@ public class ReadLog {
 	private LocalDateTime stringToTimestamp(String timestamp, Gson gson) {
 		// TODO Auto-generated method stub
 		String tempTime = gson.fromJson(timestamp, String.class);
-		DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+		DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 		LocalDateTime localDateTime = LocalDateTime.from(formatDateTime.parse(tempTime));
 		return localDateTime;
 	}
 
-	public void getTagList(String tag) {
-
-	}
-
 	public void setRangeTimeMap(LocalDateTime stTs, LocalDateTime edTs) {
-		//boolean exit = true;
+		// boolean exit = true;
 		Set<LocalDateTime> timeKeys = timeMap.keySet();
 		for (LocalDateTime key : timeKeys) {
 			if (key.isAfter(stTs) || key.isEqual(stTs)) {
@@ -87,10 +87,10 @@ public class ReadLog {
 				}
 			}
 //			if (exit) {
-	//			System.out.println("time start :" + stTs + " end : "+ edTs+" is not valid");
-		//		System.exit(0);
-			//}
-	
+			// System.out.println("time start :" + stTs + " end : "+ edTs+" is not valid");
+			// System.exit(0);
+			// }
+
 		}
 	}
 
@@ -121,10 +121,14 @@ public class ReadLog {
 		for (LocalDateTime key : timeKeys) {
 			ResultCommon[] rc = timeMap.get(key);
 			for (int i = 0; i < rc.length; i++) {
-				if (rc[i].tag.equals(tag) == false) {
-					rc[i] = null;
-				}else {
-					exit = false;
+				if (rc[i] != null) {
+					if (rc[i].tag.equals(tag) == false) {
+						rc[i] = null;
+					} else {
+						exit = false;
+					}
+				} else {
+					// System.out.println(key);
 				}
 			}
 			if (exit) {

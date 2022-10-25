@@ -1,103 +1,115 @@
 {
-  "host" : {
-    "name" : "g1n1",
-    "ip" : "192.168.0.120",
-    "port" : "30009",
-    "user" : "test",
-    "password" : "test",
-    "timeInterval" : 1000,
-    "logFile" : "resource/gopLog.json",
-    "alertFile" : "resource/gopAlert.json",
-    "print" : "true"
-  },
-  "common" : [ {
-    "name" : "execute",
-    "enable" : true,
-    "display" : true,
-    "diff" : true,
-    "sql" : "select stat_value from v$system_sql_stat where stat_name = 'CALL_EXECUTE'",
-    "tag" : "sql1"
-  }, {
-    "name" : "session",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "alertValue": 80,
-    "alertPolicy" : 1 ,
-    "sql" : "select count(*) from v$session where connection_type = 'TCP'",
-    "tag" : "sql1"
-  }, {
-    "name" : "lock",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "alertValue": 80,
-    "alertPolicy" : 1 ,
-    "sql" : "select count(*) from v$lock_wait",
-    "tag" : "sql1"
-  }, {
-    "name" : "long_query",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "alertValue": 0,
-    "alertPolicy" : 3 ,
-    "sql" : "select count(*) from v$statement where last_exec_time >= 100000",
-    "tag" : "sql1"
-  }, {
-    "name" : "tbs",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "alertValue": 80,
-    "alertPolicy" : 1 ,
-    "sql" : "select to_char((used_data_ext_count/total_ext_count)*100.0, '90.99') from v$tablespace_stat",
-    "tag" : "sql2"
-  }, {
-    "name" : "global-ager",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "sql" : "select split_part(agable_scn_gap,'.',1) from v$agable_info",
-    "tag" : "sql2"
-  }, {
-    "name" : "group-ager",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "sql" : "select split_part(agable_scn_gap,'.',2) from v$agable_info",
-    "tag" : "sql2"
-  }, {
-    "name" : "local-ager",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "sql" : "select split_part(agable_scn_gap,'.',3) from v$agable_info",
-    "tag" : "sql2"
-  } , {
-    "name" : "stmt",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "sql" : "select count(*) from v$statement",
-    "tag" : "sql2"
-  },{
-    "name" : "disk-/home",
-    "enable" : true,
-    "display" : true,
-    "diff" : true,
-    "sql" : "df -h |grep /home |awk '{print $5}' |grep -o '[0-9]'*",
-    "tag" : "sql1",
-    "isOs" : true 
-  }, {
-    "name" : "MemAvailable-mb",
-    "enable" : true,
-    "display" : true,
-    "diff" : false,
-    "alertValue": 80,
-    "alertPolicy" : 1 ,
-    "sql" : "cat /proc/meminfo |grep MemAvailable|awk {'print int($2/1024)'}",
-    "tag" : "sql1",
-    "isOs" : true 
-  }
-]}
+	"host": {
+		"name": "g1n1",
+		"ip": "192.168.0.120",
+		"port": "30009",
+		"user": "test",
+		"password": "test",
+		"timeInterval": 1000,
+		"logFile": "resource/gopLog.json",
+		"alertFile": "resource/gopAlert.json",
+		"print": "true"
+	},
+	"common": [
+		{
+			"name": "execute",
+			"enable": true,
+			"display": true,
+			"diff": true,
+			"sql": "select stat_value from v$system_sql_stat where stat_name = 'CALL_EXECUTE'",
+			"tag": "sql1"
+		},
+		{
+			"name": "session",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"alertValue": 80,
+			"alertPolicy": 1,
+			"sql": "select count(*) from v$session where connection_type = 'TCP'",
+			"tag": "sql1"
+		},
+		{
+			"name": "lock",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"alertValue": 80,
+			"alertPolicy": 1,
+			"sql": "select count(*) from v$lock_wait",
+			"tag": "sql1"
+		},
+		{
+			"name": "long_query",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"alertValue": 0,
+			"alertPolicy": 3,
+			"sql": "select count(*) from v$statement where last_exec_time >= 100000",
+			"tag": "sql1"
+		},
+		{
+			"name": "tbs",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"alertValue": 80,
+			"alertPolicy": 1,
+			"sql": "select to_char((used_data_ext_count/total_ext_count)*100.0, '90.99') from v$tablespace_stat",
+			"tag": "sql2"
+		},
+		{
+			"name": "global-ager",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"sql": "select split_part(agable_scn_gap,'.',1) from v$agable_info",
+			"tag": "sql2"
+		},
+		{
+			"name": "group-ager",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"sql": "select split_part(agable_scn_gap,'.',2) from v$agable_info",
+			"tag": "sql2"
+		},
+		{
+			"name": "local-ager",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"sql": "select split_part(agable_scn_gap,'.',3) from v$agable_info",
+			"tag": "sql2"
+		},
+		{
+			"name": "stmt",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"sql": "select count(*) from v$statement",
+			"tag": "sql2"
+		},
+		{
+			"name": "disk-/home",
+			"enable": true,
+			"display": true,
+			"diff": true,
+			"sql": "df -h |grep /home |awk '{print $5}' |grep -o '[0-9]'*",
+			"tag": "sql1",
+			"isOs": true
+		},
+		{
+			"name": "MemAvailable-mb",
+			"enable": true,
+			"display": true,
+			"diff": false,
+			"alertValue": 80,
+			"alertPolicy": 1,
+			"sql": "cat /proc/meminfo |grep MemAvailable|awk {'print int($2/1024)'}",
+			"tag": "sql1",
+			"isOs": true
+		}
+	]
+}

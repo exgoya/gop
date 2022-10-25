@@ -26,7 +26,7 @@ public class ReadOs {
 
 		cmdList.add(cmd);
 		String[] array = cmdList.toArray(new String[cmdList.size()]);
-	//	System.out.println(array[0]);
+		// System.out.println(array[0]);
 
 		try {
 
@@ -51,11 +51,11 @@ public class ReadOs {
 
 			// shell실행이정상종료되었을경우
 			if (process.exitValue() == 0) {
-				//System.out.println("성공");
+				// System.out.println("성공");
 				msg = successOutput.toString().trim();
-				//System.out.println(msg);
-				out= Integer.parseInt(msg);
-				
+				// System.out.println(msg);
+				out = Integer.parseInt(msg);
+
 			} else {
 				// shell실행이비정상종료되었을경우
 				System.out.println("비정상종료");
@@ -63,11 +63,11 @@ public class ReadOs {
 			}
 
 			// shell실행시에러가발생
-			//if (CommonUtil.notEmpty(errorOutput.toString())) {
-			//	// shell실행이비정상종료되었을경우
-			//	System.out.println("오류");
-			//	System.out.println(successOutput.toString());
-			//}
+			// if (CommonUtil.notEmpty(errorOutput.toString())) {
+			// // shell실행이비정상종료되었을경우
+			// System.out.println("오류");
+			// System.out.println(successOutput.toString());
+			// }
 
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -1,4 +1,5 @@
 package model;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -13,7 +14,7 @@ public class Host {
 	public String logFile;
 	public String alertFile;
 	public boolean print;
-	
+
 	public Host(String name, String ip, int port, String user, String password) {
 		super();
 		this.name = name;
@@ -41,7 +42,7 @@ public class Host {
 	public String toString() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		String json = gson.toJson(this);
-		
-		return json;	
+
+		return json;
 	}
 }

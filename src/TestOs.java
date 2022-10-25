@@ -62,11 +62,11 @@ public class TestOs {
 			}
 
 			// shell실행시에러가발생
-			//if (CommonUtil.notEmpty(errorOutput.toString())) {
-			//	// shell실행이비정상종료되었을경우
-			//	System.out.println("오류");
-			//	System.out.println(successOutput.toString());
-			//}
+			// if (CommonUtil.notEmpty(errorOutput.toString())) {
+			// // shell실행이비정상종료되었을경우
+			// System.out.println("오류");
+			// System.out.println(successOutput.toString());
+			// }
 
 		} catch (IOException e) {
 			e.printStackTrace();
