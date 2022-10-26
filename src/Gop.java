@@ -127,25 +127,61 @@ public class Gop {
 		Db db = new Db(config);
 		Connection con = db.createConnection();
 		PreparedStatement[] arrPstmt = db.createPstmt(con);
+		int printRow = 0;
+		Data beforeData = new Data(null, null);
+		Data calData = new Data(null, null);
 
 		while (true) {
 
 			Data data = db.getCommonQuery(arrPstmt);
+
 			// ResultCommon[] rc2 = db.getOsQuery();
 
 			// write output file (json)
-			writeJson(data, gson, logFile, alertFile);
+			if (beforeData.rc == null) {
+				calData = new Data(data.getTime(),data.getRc());
+				beforeData = new Data(data.getTime(),data.getRc());
+			} else {
+
+				System.out.println("before : " + beforeData.rc[0].value);
+				System.out.println("current: " + data.rc[0].value);
+				System.out.println("calcu  : " + calData.rc[0].value);
+		
+				//beforeData.rc[0].value = new ResultCommon(null, 1,null,true).value;
+
+				calData = diffDataCal(data, beforeData ,config);
+				beforeData = data;
+				System.out.println("before : " + beforeData.rc[0].value);
+				System.out.println("current: " + data.rc[0].value);
+				System.out.println("calcu  : " + calData.rc[0].value);
+				
+			}
+			writeJson(calData, gson, logFile, alertFile);
 			// writeJson(rc2, gson, logFile, alertFile);
 
 			// print console (table)
 			if (config.host.print) {
-				printTable(data);
-				// printTable(rc2);
+				printTable(calData);
+				printRow++;
+				if (printRow % config.host.pagesize == 0) {
+					gColumn = true;
+				}
 			}
 			data = null;
 			// rc2 = null;
 			Thread.sleep(config.host.timeInterval);
 		}
+	}
+
+	private static Data diffDataCal(Data data, Data beforeData, Config config) {
+		Data tempData = new Data(data.time, data.rc);
+		for (int i = 0; i < data.rc.length; i++) {
+			if (config.common[i].diff) {
+				tempData.rc[i].value = data.rc[i].value - beforeData.rc[i].value;
+			}
+			;
+		}
+		return tempData;
 	}
 
 	private static String timestampToString(LocalDateTime timestamp) {

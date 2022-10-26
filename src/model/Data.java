@@ -13,6 +13,22 @@ public class Data {
 		this.rc = resultArr;
 	}
 
+	public String getTime() {
+		return time;
+	}
+
+	public void setTime(String time) {
+		this.time = time;
+	}
+
+	public ResultCommon[] getRc() {
+		return rc;
+	}
+
+	public void setRc(ResultCommon[] rc) {
+		this.rc = rc;
+	}
+
 	@Override
 	public String toString() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();

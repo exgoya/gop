@@ -14,6 +14,7 @@ public class Host {
 	public String logFile;
 	public String alertFile;
 	public boolean print;
+	public int pagesize;
 
 	public Host(String name, String ip, int port, String user, String password) {
 		super();
@@ -25,7 +26,7 @@ public class Host {
 	}
 
 	public Host(String name, String ip, int port, String user, String password, int timeInterval, String logFile,
-			String alertFile, boolean print) {
+			String alertFile, boolean print,int pagesize) {
 		super();
 		this.name = name;
 		this.ip = ip;
@@ -36,6 +37,7 @@ public class Host {
 		this.logFile = logFile;
 		this.alertFile = alertFile;
 		this.print = print;
+		this.pagesize = pagesize;
 	}
 
 	@Override
