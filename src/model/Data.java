@@ -13,6 +13,20 @@ public class Data {
 		this.rc = resultArr;
 	}
 
+	public Data(Data data) {
+		// TODO Auto-generated constructor stub
+		this.time = data.time;
+		ResultCommon[] rc = data.rc.clone();
+		//new ResultCommon[data.rc.length];
+		
+		for (int i=0; i<data.rc.length;i++) {
+			rc[i] = new ResultCommon(data.rc[i].name, data.rc[i].value,  data.rc[i].tag, data.rc[i].alert);
+		}
+		this.rc = rc;
+		
+	
+	}
+
 	public String getTime() {
 		return time;
 	}
@@ -36,4 +50,7 @@ public class Data {
 
 		return json;
 	}
+   public Data newInstance(Data data) {
+        return new Data(data);
+    }
 }

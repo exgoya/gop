@@ -139,22 +139,11 @@ public class Gop {
 
 			// write output file (json)
 			if (beforeData.rc == null) {
-				calData = new Data(data.getTime(),data.getRc());
-				beforeData = new Data(data.getTime(),data.getRc());
+				calData = data.newInstance(data);
+				beforeData = data.newInstance(data);
 			} else {
-
-				System.out.println("before : " + beforeData.rc[0].value);
-				System.out.println("current: " + data.rc[0].value);
-				System.out.println("calcu  : " + calData.rc[0].value);
-		
-				//beforeData.rc[0].value = new ResultCommon(null, 1,null,true).value;
-
-				calData = diffDataCal(data, beforeData ,config);
-				beforeData = data;
-				System.out.println("before : " + beforeData.rc[0].value);
-				System.out.println("current: " + data.rc[0].value);
-				System.out.println("calcu  : " + calData.rc[0].value);
-				
+				diffDataCal(calData, data, beforeData ,config);
+				beforeData = data;	
 			}
 			writeJson(calData, gson, logFile, alertFile);
 			// writeJson(rc2, gson, logFile, alertFile);
@@ -173,15 +162,17 @@ public class Gop {
 		}
 	}
 
-	private static Data diffDataCal(Data data, Data beforeData, Config config) {
-		Data tempData = new Data(data.time, data.rc);
+	private  static void diffDataCal(Data cal,Data data, Data beforeData, Config config) {
+		//Data tempData = new Data(data.time, data.rc);
+		//ResultCommon[] rc = new ResultCommon[data.rc.length];
+		//Data tempData = new Data(data.time, rc);
 		for (int i = 0; i < data.rc.length; i++) {
 			if (config.common[i].diff) {
-				tempData.rc[i].value = data.rc[i].value - beforeData.rc[i].value;
+				cal.rc[i].value = data.rc[i].value - beforeData.rc[i].value;
 			}
 			;
 		}
-		return tempData;
+		//return tempData;
 	}
 
 	private static String timestampToString(LocalDateTime timestamp) {
