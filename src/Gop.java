@@ -162,7 +162,7 @@ public class Gop {
 		}
 	}
 
-	private  static void diffDataCal(Data cal,Data data, Data beforeData, Config config) {
+	private static void diffDataCal(Data cal,Data data, Data beforeData, Config config) {
 		//Data tempData = new Data(data.time, data.rc);
 		//ResultCommon[] rc = new ResultCommon[data.rc.length];
 		//Data tempData = new Data(data.time, rc);
@@ -170,7 +170,6 @@ public class Gop {
 			if (config.common[i].diff) {
 				cal.rc[i].value = data.rc[i].value - beforeData.rc[i].value;
 			}
-			;
 		}
 		//return tempData;
 	}
