@@ -142,8 +142,8 @@ public class Gop {
 				calData = data.newInstance(data);
 				beforeData = data.newInstance(data);
 			} else {
-				diffDataCal(calData, data, beforeData ,config);
-				beforeData = data;	
+				calData = diffDataCal(data, beforeData ,config);
+				beforeData = data.newInstance(data);
 			}
 			writeJson(calData, gson, logFile, alertFile);
 			// writeJson(rc2, gson, logFile, alertFile);
@@ -162,16 +162,17 @@ public class Gop {
 		}
 	}
 
-	private static void diffDataCal(Data cal,Data data, Data beforeData, Config config) {
+	private static Data diffDataCal(Data data, Data beforeData, Config config) {
 		//Data tempData = new Data(data.time, data.rc);
 		//ResultCommon[] rc = new ResultCommon[data.rc.length];
 		//Data tempData = new Data(data.time, rc);
+		Data cal = data.newInstance(data);
 		for (int i = 0; i < data.rc.length; i++) {
 			if (config.common[i].diff) {
 				cal.rc[i].value = data.rc[i].value - beforeData.rc[i].value;
 			}
 		}
-		//return tempData;
+		return cal;
 	}
 
 	private static String timestampToString(LocalDateTime timestamp) {
