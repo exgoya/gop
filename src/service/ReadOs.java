@@ -58,7 +58,7 @@ public class ReadOs {
 
 			} else {
 				// shell실행이비정상종료되었을경우
-				System.out.println("비정상종료");
+				System.out.println("비정상종료: "+cmd);
 				System.out.println(successOutput.toString());
 			}
 

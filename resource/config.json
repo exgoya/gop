@@ -1,7 +1,7 @@
 {
 	"host": {
 		"name": "g1n1",
-		"ip": "192.168.0.120",
+		"ip": "127.0.0.1",
 		"port": "30009",
 		"user": "test",
 		"password": "test",
