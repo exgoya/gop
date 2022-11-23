@@ -11,8 +11,7 @@ public class Host {
 	public String user;
 	public String password;
 	public int timeInterval;
-	public String logFile;
-	public String alertFile;
+	public String logPath;
 	public boolean print;
 	public int pagesize;
 
@@ -25,8 +24,8 @@ public class Host {
 		this.password = password;
 	}
 
-	public Host(String name, String ip, int port, String user, String password, int timeInterval, String logFile,
-			String alertFile, boolean print,int pagesize) {
+	public Host(String name, String ip, int port, String user, String password, int timeInterval, String logPath,
+		boolean print,int pagesize) {
 		super();
 		this.name = name;
 		this.ip = ip;
@@ -34,8 +33,7 @@ public class Host {
 		this.user = user;
 		this.password = password;
 		this.timeInterval = timeInterval;
-		this.logFile = logFile;
-		this.alertFile = alertFile;
+		this.logPath = logPath;
 		this.print = print;
 		this.pagesize = pagesize;
 	}

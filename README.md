@@ -9,6 +9,7 @@ gop를 사용하여 아래의 내용으로  Goldilocks database에 대한 상태
  
  
 ## 시작하기: 
+소스를 받아서 컴파일 합니다.
 
 ~~~
 $ git clone https://github.com/exgoya/gop.git
@@ -37,7 +38,21 @@ Manifest를 추가함
 추가하는 중: service/ReadOs.class(입력 = 2685) (출력 = 1517)(43%를 감소함)
 ~~~
 
-쉘을 사용하여 jar 파일을 만들고 config 사용하여 모니터링 자료 trace를 시작합니다.
+config 사용하여 jar를 실행하고 goldilocks database trace를 시작합니다.
+
+~~~
+[centos@goya-db1 gop]$ java -Xmx100M -jar gop.jar resource/config.json demon
+time       execute       session          lock    long_query           tbs   global-ager    group-ager    local-ager          stmt     MemAvaimb
+"2022-11-07 16:52:49.721"       7516919             1             0             0             1             0             0             0             9          2686
+"2022-11-07 16:52:50.831"             9             1             0             0             1             0             0             0             9          2685
+"2022-11-07 16:52:51.907"             9             1             0             0             1             0             0             0             9          2684
+"2022-11-07 16:52:52.970"             9             1             0             0             1             0             0             0             9          2684
+"2022-11-07 16:52:54.032"             9             1             0             0             1             0             0             0             9          2684
+"2022-11-07 16:52:55.090"             9             1             0             0             1             0             0             0             9          2683
+"2022-11-07 16:52:56.155"             9             1             0             0             1             0             0             0             9          2680
+"2022-11-07 16:52:57.215"             9             1             0             0             1             0             0             0             9          2680
+~~~
+
 
 #### run
  

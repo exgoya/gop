@@ -39,9 +39,8 @@ public class Db {
 		for (int i = 0; i < sConfig.common.length; i++) {
 
 			// Statement stmt = con.createStatement();
-
+			boolean alert = false;
 			if (sConfig.common[i].isOs) {
-				boolean alert = false;
 				int queryValue = 0;
 
 				ReadOs oc = new ReadOs();
@@ -59,7 +58,6 @@ public class Db {
 					System.out.println("not support multiple column query _ Query name : " + sConfig.common[i].name);
 				}
 
-				boolean alert = false;
 				int queryValue = 0;
 				while (rs.next()) {
 					queryValue = rs.getInt(1);
@@ -69,6 +67,14 @@ public class Db {
 				}
 				rs.close();
 			}
+			
+			//alert action script
+			if (alert) {
+				//run action script
+				
+			}
+			
+			
 		}
 		return new Data(sysTimestamp, resultArr);
 	}

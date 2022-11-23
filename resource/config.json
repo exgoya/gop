@@ -6,8 +6,7 @@
 		"user": "test",
 		"password": "test",
 		"timeInterval": 1000,
-		"logFile": "resource/gopLog.json",
-		"alertFile": "resource/gopAlert.json",
+		"logPath": "resource/",
 		"print": "true",
 		"pagesize":"10"
 	},
@@ -29,14 +28,15 @@
 			"name": "lock",
 			"alertValue": 80,
 			"alertPolicy": 1,
+			"alertSql":"select * from tech_lockwait",
 			"sql": "select count(*) from v$lock_wait",
 			"tag": "sql1"
 		},
 		{
-			"name": "long_query",
+			"name": "long_Tx",
 			"alertValue": 0,
 			"alertPolicy": 3,
-			"sql": "select count(*) from v$statement where last_exec_time >= 100000",
+			"sql": "select count(*) from x$transaction@local where datediff(SECOND,BEGIN_TIME,systimestamp) > 10",
 			"tag": "sql1"
 		},
 		{
