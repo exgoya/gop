@@ -23,11 +23,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
+import model.Common;
 import model.Config;
 import model.Data;
 import model.ResultCommon;
 import service.Db;
 import service.ReadLog;
+import service.ReadOs;
 
 public class Gop {
 	static boolean gColumn = true;
@@ -166,7 +168,7 @@ public class Gop {
 			}
 			
 
-			writeJson(calData, gson, logFile, alertFile,config.host.logPath);
+			writeJson(calData, gson, logFile, alertFile,config.host.logPath,config.common);
 			// writeJson(rc2, gson, logFile, alertFile);
 
 			// print console (table)
@@ -212,7 +214,7 @@ public class Gop {
 		return gson.fromJson(reader, Config.class);
 	}
 
-	private static void writeJson(Data data, Gson gson, File logFile, File alertFile, String logPath) throws IOException {
+	private static void writeJson(Data data, Gson gson, File logFile, File alertFile, String logPath, Common[] common) throws IOException {
 
 		if(!logFile.getName().equals(logPath+"log_"+ getTime("YYYYMMDD")+".json")) {
 			logFile = new File(logPath+"log_"+ getTime("YYYYMMDD")+".json");
@@ -230,8 +232,12 @@ public class Gop {
 		String gRc = gson.toJson(data);
 		bw.write(gRc);
 		for (int i = 0; i < data.rc.length; i++) {
-			if (data.rc[i].alert) {
-				alertBw.write(gRc);
+			if (data.rc[i].alert && common[i].alertScript != null) {
+				alertBw.newLine();
+				alertBw.write("alert time :" + data.time);
+				alertBw.newLine();
+				alertBw.newLine();
+				alertBw.write(ReadOs.executeS(common[i].alertScript));
 				alertBw.newLine();
 			}
 		}
