@@ -59,7 +59,8 @@ public class Gop {
 		Gson gson = new GsonBuilder().setLenient().create();
 		Config config = readAndConvConf(rFile, Config.class, gson);
 
-		File logFile = new File(config.host.logPath+"log_"+ getTime("YYYYMMDD")+".json");
+		File logFile = new File(config.host.logPath+"log_"+ getTime("YYYYMMdd")+".json");
+		System.out.println(logFile);
 		File alertFile = new File(config.host.logPath+"alert_"+ getTime("YYYYMM")+".json");
 		gName=config.host.name;
 		gHost=config.host.ip;
@@ -70,7 +71,7 @@ public class Gop {
 			gStampLog(config, gson, logFile, alertFile);
 			break;
 		case "client":
-			ReadLog rl = new ReadLog(new File(config.host.logPath), gson, config);
+			ReadLog rl = new ReadLog(new File(config.host.logPath+"log_"+ getTime("YYYYMMdd")+".json"), gson, config);
 			switch (args[2]) {
 			case "all":
 				printTableMap(rl.timeMap);
@@ -216,8 +217,8 @@ public class Gop {
 
 	private static void writeJson(Data data, Gson gson, File logFile, File alertFile, String logPath, Common[] common) throws IOException {
 
-		if(!logFile.getName().equals(logPath+"log_"+ getTime("YYYYMMDD")+".json")) {
-			logFile = new File(logPath+"log_"+ getTime("YYYYMMDD")+".json");
+		if(!logFile.getName().equals(logPath+"log_"+ getTime("YYYYMMdd")+".json")) {
+			logFile = new File(logPath+"log_"+ getTime("YYYYMMdd")+".json");
 		}
 		if(!alertFile.getName().equals(logPath+"alert_"+ getTime("YYYYMM")+".json")) {
 			alertFile = new File(logPath+"alert_"+ getTime("YYYYMM")+".json");
