@@ -8,6 +8,13 @@ import java.util.List;
 
 public class ReadOs {
 	int execute(String cmd) {
+		return Integer.parseInt(runS(cmd));
+	}
+	public static String executeS(String cmd) {
+		return runS(cmd);
+	}
+	
+	private static String runS(String cmd) {
 		Process process = null;
 		Runtime runtime = Runtime.getRuntime();
 		StringBuffer successOutput = new StringBuffer();
@@ -15,7 +22,6 @@ public class ReadOs {
 		BufferedReader successBufferReader = null;
 		BufferedReader errorBufferReader = null;
 		String msg = null;
-		int out = 0;
 
 		List<String> cmdList = new ArrayList<String>();
 
@@ -54,8 +60,6 @@ public class ReadOs {
 				// System.out.println("성공");
 				msg = successOutput.toString().trim();
 				// System.out.println(msg);
-				out = Integer.parseInt(msg);
-
 			} else {
 				// shell실행이비정상종료되었을경우
 				System.out.println("비정상종료: "+cmd);
@@ -84,6 +88,6 @@ public class ReadOs {
 				e1.printStackTrace();
 			}
 		}
-		return out;
+			return msg;
 	}
 }

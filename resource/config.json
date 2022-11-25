@@ -26,11 +26,13 @@
 		},
 		{
 			"name": "lock",
-			"alertValue": 80,
+			"alertValue": 0,
 			"alertPolicy": 1,
 			"alertSql":"select * from tech_lockwait",
 			"sql": "select count(*) from v$lock_wait",
-			"tag": "sql1"
+			"tag": "sql1",
+			"alertScript":"echo \"select * from tech_lockwait;\"|gsqlnet sys gliese --no-prompt"
+			
 		},
 		{
 			"name": "long_Tx",
@@ -79,7 +81,8 @@
 			"alertPolicy": 1,
 			"sql": "cat /proc/meminfo |grep MemAvailable|awk {'print int($2/1024)'}",
 			"tag": "sql1",
-			"isOs": true
+			"isOs": true,
+			"alertScript":"echo \"select * from tech_cluster;\"|gsqlnet sys gliese --no-prompt"
 		}
 	]
 }
