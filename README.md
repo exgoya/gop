@@ -24,7 +24,6 @@ remote: Total 406 (delta 33), reused 35 (delta 0), pack-reused 338
 $ cd gop
 
 $ sh resource/comp.sh
-mkdir: `bin' 디렉토리를 만들 수 없습니다: File exists
 Manifest를 추가함
 추가하는 중: Gop.class(입력 = 8121) (출력 = 4177)(48%를 감소함)
 추가하는 중: TestOs.class(입력 = 2728) (출력 = 1539)(43%를 감소함)
