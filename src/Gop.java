@@ -238,7 +238,13 @@ public class Gop {
 				alertBw.write("alert time :" + data.time);
 				alertBw.newLine();
 				alertBw.newLine();
-				alertBw.write(ReadOs.executeS(common[i].alertScript));
+				if(common[i].alertScriptIsOs)
+				{
+					alertBw.write(ReadOs.executeS(common[i].alertScript));
+				}else {
+					String tmp="echo \'" +common[i].alertScript + ";\' |gsqlnet sys gliese --no-prompt";
+					alertBw.write(ReadOs.executeS(tmp));
+				}
 				alertBw.newLine();
 			}
 		}

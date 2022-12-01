@@ -10,10 +10,11 @@ public class Common {
 	public int alertPolicy;
 	public String sql;
 	public String tag;
-	public boolean isOs;
+	public boolean sqlIsOs;
 	public String alertScript;
+	public boolean alertScriptIsOs;
 
-	public Common(String name, boolean diff, int alertValue, int alertPolicy, String sql, String tag, boolean isOs,String alertScript) {
+	public Common(String name, boolean diff, int alertValue, int alertPolicy, String sql, String tag, boolean sqlIsOs,String alertScript, boolean alertScriptIsOs) {
 		super();
 		this.name = name;
 		this.diff = diff;
@@ -21,8 +22,9 @@ public class Common {
 		this.alertPolicy = alertPolicy;
 		this.sql = sql;
 		this.tag = tag;
-		this.isOs = isOs;
+		this.sqlIsOs = sqlIsOs;
 		this.alertScript = alertScript;
+		this.alertScriptIsOs = alertScriptIsOs;
 	}
 
 	@Override

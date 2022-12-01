@@ -21,7 +21,7 @@ public class Db {
 
 		PreparedStatement[] arrPstmt = new PreparedStatement[sConfig.common.length];
 		for (int i = 0; i < sConfig.common.length; i++) {
-			if (!sConfig.common[i].isOs) {
+			if (!sConfig.common[i].sqlIsOs) {
 				arrPstmt[i] = con.prepareStatement(sConfig.common[i].sql);
 			}
 		}
@@ -40,7 +40,7 @@ public class Db {
 
 			// Statement stmt = con.createStatement();
 			boolean alert = false;
-			if (sConfig.common[i].isOs) {
+			if (sConfig.common[i].sqlIsOs) {
 				int queryValue = 0;
 
 				ReadOs oc = new ReadOs();

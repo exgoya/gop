@@ -72,6 +72,75 @@ sample use  >>
 ex )
  java -Xmx100M -jar gop.jar resource/config.json demon
 
+## Config
+
+config 명세  
+
+~~~
+
+host : 모니터링 서버 환경 정보  
+	name : String - DB 이름을 명시한다 ( ex. g1n1 , g2n1 )  
+	ip : String - DB IP  
+	port : int - DB PORT  
+	user : String - DB USERNAME  
+	password : String - DB password  
+	timeInterval : int - monitoring time interval  
+	print : boolean - print monitoring log  
+	pagesize : int - print column header between row  
+	
+common  
+	name : String - monitoring column name  
+	tag : String - monitoring tag name  
+	diff : boolean - diff before values  
+	alertValue : int  
+	alertPolicy : int  
+	sql : String - monitoring query  
+	sqlIsOs : boolean - sql command is os command  
+	alertScript : String   
+	alertScriptIsOs : boolean  
+
+~~~
+
+config sample
+
+~~~
+{
+	"host": {
+		"name": "g1n1",
+		"ip": "192.168.0.119",
+		"port": "30009",
+		"user": "test",
+		"password": "test",
+		"timeInterval": 1000,
+		"logPath": "resource/",
+		"print": "true",
+		"pagesize":"10"
+	},
+	"common": [
+		{
+			"name": "long_Tx",
+			"tag": "sql1",
+			"alertValue": 0,
+			"alertPolicy": 3,
+			"sql": "select count(*) from x$transaction@local where datediff(SECOND,BEGIN_TIME,systimestamp) > 10",
+			"alertScript":"free -wh",
+			"alertScriptIsOs": true
+		},
+		{
+			"name": "MemAvaimb",
+			"tag": "sql1",
+			"diff": false,
+			"alertValue": 80,
+			"alertPolicy": 1,
+			"sql": "cat /proc/meminfo |grep MemAvailable|awk {'print int($2/1024)'}",
+			"sqlIsOs": true,
+			"alertScript":"select * from x$cluster_member",
+			"alertScriptIsOs": false
+		}
+	]
+	
+~~~
+
 ## alert policy :
 - 0 : not use ( default )
 - 1 : is greater then alertValue ( query result > alertValue )

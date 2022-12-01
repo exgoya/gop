@@ -1,7 +1,7 @@
 {
 	"host": {
 		"name": "g1n1",
-		"ip": "127.0.0.1",
+		"ip": "192.168.0.119",
 		"port": "30009",
 		"user": "test",
 		"password": "test",
@@ -31,15 +31,17 @@
 			"alertSql":"select * from tech_lockwait",
 			"sql": "select count(*) from v$lock_wait",
 			"tag": "sql1",
-			"alertScript":"echo \"select * from tech_lockwait;\"|gsqlnet sys gliese --no-prompt"
-			
+			"alertScript":"echo \"select * from tech_lockwait;\"|gsqlnet sys gliese --no-prompt",
+			"alertScriptIsOs": true
 		},
 		{
 			"name": "long_Tx",
 			"alertValue": 0,
 			"alertPolicy": 3,
 			"sql": "select count(*) from x$transaction@local where datediff(SECOND,BEGIN_TIME,systimestamp) > 10",
-			"tag": "sql1"
+			"tag": "sql1",
+			"alertScript":"free -wh",
+			"alertScriptIsOs": true
 		},
 		{
 			"name": "tbs",
@@ -72,7 +74,7 @@
 			"name": "disk-/home",
 			"sql": "df -h |grep /home |awk '{print $5}' |grep -o '[0-9]'*",
 			"tag": "sql1",
-			"isOs": true
+			"sqlIsOs": true
 		},
 		{
 			"name": "MemAvaimb",
@@ -81,8 +83,9 @@
 			"alertPolicy": 1,
 			"sql": "cat /proc/meminfo |grep MemAvailable|awk {'print int($2/1024)'}",
 			"tag": "sql1",
-			"isOs": true,
-			"alertScript":"echo \"select * from tech_cluster;\"|gsqlnet sys gliese --no-prompt"
+			"sqlIsOs": true,
+			"alertScript":"select * from x$cluster_member;",
+			"alertScriptIsOs": false
 		}
 	]
 }
