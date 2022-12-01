@@ -70,7 +70,7 @@ sample use  >>
 - resource/config.json client all
 
 ex )
- java -Xmx100M -jar resource/config.json gop.jar demon
+ java -Xmx100M -jar gop.jar resource/config.json demon
 
 ## alert policy :
 - 0 : not use ( default )
