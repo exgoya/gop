@@ -8,7 +8,7 @@
 		"timeInterval": 1000,
 		"logPath": "resource/",
 		"print": "true",
-		"pagesize":"10"
+		"pagesize": "10"
 	},
 	"common": [
 		{
@@ -31,6 +31,13 @@
 			"tag": "sql1"
 		},
 		{
+			"name": "g-session",
+			"alertValue": 80,
+			"alertPolicy": 1,
+			"sql": "select count(*) from x$session@local where top_layer = 13 and global_connection is true",
+			"tag": "sql1"
+		},
+		{
 			"name": "peer",
 			"alertValue": 80,
 			"alertPolicy": 1,
@@ -41,10 +48,10 @@
 			"name": "lock",
 			"alertValue": 0,
 			"alertPolicy": 1,
-			"alertSql":"select * from tech_lockwait",
+			"alertSql": "select * from tech_lockwait",
 			"sql": "select count(*) from v$lock_wait",
 			"tag": "sql1",
-			"alertScript":"echo \"select * from tech_lockwait;\"|gsqlnet sys gliese --no-prompt",
+			"alertScript": "echo \"select * from tech_lockwait;\"|gsqlnet sys gliese --no-prompt",
 			"alertScriptIsOs": true
 		},
 		{
@@ -53,7 +60,7 @@
 			"alertPolicy": 3,
 			"sql": "select count(*) from x$transaction@local where datediff(SECOND,BEGIN_TIME,systimestamp) > 10",
 			"tag": "sql1",
-			"alertScript":"free -wh",
+			"alertScript": "free -wh",
 			"alertScriptIsOs": true
 		},
 		{
@@ -97,7 +104,7 @@
 			"sql": "cat /proc/meminfo |grep MemAvailable|awk {'print int($2/1024)'}",
 			"tag": "sql1",
 			"sqlIsOs": true,
-			"alertScript":"select * from x$cluster_member;",
+			"alertScript": "select * from x$cluster_member;",
 			"alertScriptIsOs": false
 		}
 	]
