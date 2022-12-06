@@ -1,6 +1,14 @@
 resource/config.json client resource/log_20221201.json time '2022-10-18 11:07:49' '2022-10-18 11:07:57'
 resource/config.json client resource/log_20221201.json tag sql1
-resource/config.json client resource/log_20221201.json all
+resource/config.json client resource/log_20221201.json 
 resource/config.json client resource/log_20221201.json name stmt
 
 resource/config.json demon
+
+-config resource/config.json -demon
+-config resource/config.json -client -log resource/log_20221206.json -head 10 -time '2022-12-06 17:20:47.242' '2022-12-06 17:20:55.140'
+-config resource/config.json -client -log resource/log_20221206.json -head 10 -tag sql1
+-config resource/config.json -client -log resource/log_20221206.json -head 10
+-config resource/config.json -client -log resource/log_20221206.json -head 10 -name stmt
+-config resource/config.json -client -log resource/log_20221206.json -tag sql1 -tail 10
+

@@ -30,6 +30,7 @@ import model.ResultCommon;
 import service.Db;
 import service.ReadLog;
 import service.ReadOs;
+import service.CommandLineParser;
 
 public class Gop {
 	static boolean gColumn = true;
@@ -50,78 +51,97 @@ public class Gop {
 
 	public static void main(String[] args)
 			throws SQLException, IOException, InterruptedException, JsonSyntaxException, ParseException {
+		CommandLineParser clp = new CommandLineParser(args);
+
 		if (args.length < 2) {
 			System.out.println("invalid argument args : " + args.length);
 			System.exit(0);
 		}
+		boolean client = clp.getFlag("client");
+		boolean demon = clp.getFlag("demon");
+		String configFile = clp.getArgumentValue("config")[0];
+		String log = clp.getArgumentValue("log")[0];
+		int head = clp.getArgumentValueInt("head");
+		int tail = clp.getArgumentValueInt("tail");
+		String time1 = clp.getArgumentValue("time")[0];
+		String time2 = clp.getArgumentValue("time")[1];
+		String tagArg = clp.getArgumentValue("tag")[0];
+		String nameArg = clp.getArgumentValue("name")[0];
 
-		rFile = new File(args[0]);
+		rFile = new File(configFile);
 		Gson gson = new GsonBuilder().setLenient().create();
 		Config config = readAndConvConf(rFile, Config.class, gson);
 
-		File logFile = new File(config.host.logPath+"log_"+ getTime("YYYYMMdd")+".json");
+		File logFile = new File(config.host.logPath + "log_" + getTime("YYYYMMdd") + ".json");
 		System.out.println(logFile);
-		File alertFile = new File(config.host.logPath+"alert_"+ getTime("YYYYMM")+".json");
-		gName=config.host.name;
-		gHost=config.host.ip;
-		gPort=Integer.toString(config.host.port);
+		File alertFile = new File(config.host.logPath + "alert_" + getTime("YYYYMM") + ".json");
+		gName = config.host.name;
+		gHost = config.host.ip;
+		gPort = Integer.toString(config.host.port);
 
-		switch (args[1]) {
-		case "demon":
+		if (demon) {
 			gStampLog(config, gson, logFile, alertFile);
-			break;
-		case "client":
-			ReadLog rl = new ReadLog(new File(args[2]), gson, config);
-			switch (args[3]) {
-			case "all":
-				printTableMap(rl.timeMap);
-				break;
-			case "time":
-				LocalDateTime stTs = stringToDate(args[4]);
-				LocalDateTime edTs = stringToDate(args[5]);
+		} else if (client) {
+			ReadLog rl = new ReadLog(new File(log), gson, config);
+
+			if (time1 != null && time2 != null) {
+				LocalDateTime stTs = stringToDate(time1);
+				LocalDateTime edTs = stringToDate(time2);
 				rl.setRangeTimeMap(stTs, edTs);
-				printTableMap(rl.rangeTimeMap);
-				break;
-			case "name":
-				String name = args[4];
+				printTableMap(rl.rangeTimeMap,head,tail);
+			} else if (nameArg != null) {
+				String name = nameArg;
 				rl.setNameMap(name);
-				printTableMap(rl.nameMap);
-				break;
-			case "tag":
-				String tag = args[4];
+				printTableMap(rl.nameMap,head,tail);
+			} else if (tagArg != null) {
+				String tag = tagArg;
 				rl.setTagMap(tag);
-				printTableMap(rl.tagMap);
-				break;
-			default:
-				System.out.println("invalid argument");
-				break;
+				printTableMap(rl.tagMap,head,tail);
+			} else {
+				printTableMap(rl.timeMap,head,tail);
 			}
-			break;
-		default:
-			System.out.println("invalid argument 1");
-			break;
+		} else {
+			System.out.println("invalid argument");
 		}
-//		System.out.println(rl.convString(rl.rangeTimeMap));
+
 	}
+
+//		System.out.println(rl.convString(rl.rangeTimeMap));
 
 	private static String getTime(String string) {
-        SimpleDateFormat sdf = new SimpleDateFormat(string);
+		SimpleDateFormat sdf = new SimpleDateFormat(string);
 
-        Calendar c1 = Calendar.getInstance();
+		Calendar c1 = Calendar.getInstance();
 
-        return sdf.format(c1.getTime());
+		return sdf.format(c1.getTime());
 	}
 
-	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap) {
+	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap, int head, int tail) {
 		if (rangeTimeMap.isEmpty()) {
 			System.out.println("no data!");
 			System.exit(0);
 		}
 		Set<LocalDateTime> timeKeys = rangeTimeMap.keySet();
+		int i = 0;
 		for (LocalDateTime key : timeKeys) {
 			// System.out.println(key);
-			Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-			printTable(data);
+			if ( head > 0 ) {
+				if(i < head ) {
+					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
+					printTable(data);
+//					System.out.println("head: " +i);
+				}
+			}else if (tail > 0) {
+				if(timeKeys.size()-tail <= i) {
+					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
+					printTable(data);
+//					System.out.println("tail: " +i);
+				}
+			}else {
+				Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
+				printTable(data);
+			}
+			i++;
 		}
 	}
 
@@ -153,7 +173,6 @@ public class Gop {
 //		System.out.println(logFile.getName());
 
 		while (true) {
-			
 
 			Data data = db.getCommonQuery(arrPstmt);
 
@@ -164,12 +183,11 @@ public class Gop {
 				calData = data.newInstance(data);
 				beforeData = data.newInstance(data);
 			} else {
-				calData = diffDataCal(data, beforeData ,config);
+				calData = diffDataCal(data, beforeData, config);
 				beforeData = data.newInstance(data);
 			}
-			
 
-			writeJson(calData, gson, logFile, alertFile,config.host.logPath,config.common);
+			writeJson(calData, gson, logFile, alertFile, config.host.logPath, config.common);
 			// writeJson(rc2, gson, logFile, alertFile);
 
 			// print console (table)
@@ -187,9 +205,9 @@ public class Gop {
 	}
 
 	private static Data diffDataCal(Data data, Data beforeData, Config config) {
-		//Data tempData = new Data(data.time, data.rc);
-		//ResultCommon[] rc = new ResultCommon[data.rc.length];
-		//Data tempData = new Data(data.time, rc);
+		// Data tempData = new Data(data.time, data.rc);
+		// ResultCommon[] rc = new ResultCommon[data.rc.length];
+		// Data tempData = new Data(data.time, rc);
 		Data cal = data.newInstance(data);
 		for (int i = 0; i < data.rc.length; i++) {
 			if (config.common[i].diff) {
@@ -215,13 +233,14 @@ public class Gop {
 		return gson.fromJson(reader, Config.class);
 	}
 
-	private static void writeJson(Data data, Gson gson, File logFile, File alertFile, String logPath, Common[] common) throws IOException {
+	private static void writeJson(Data data, Gson gson, File logFile, File alertFile, String logPath, Common[] common)
+			throws IOException {
 
-		if(!logFile.getName().equals(logPath+"log_"+ getTime("YYYYMMdd")+".json")) {
-			logFile = new File(logPath+"log_"+ getTime("YYYYMMdd")+".json");
+		if (!logFile.getName().equals(logPath + "log_" + getTime("YYYYMMdd") + ".json")) {
+			logFile = new File(logPath + "log_" + getTime("YYYYMMdd") + ".json");
 		}
-		if(!alertFile.getName().equals(logPath+"alert_"+ getTime("YYYYMM")+".json")) {
-			alertFile = new File(logPath+"alert_"+ getTime("YYYYMM")+".json");
+		if (!alertFile.getName().equals(logPath + "alert_" + getTime("YYYYMM") + ".json")) {
+			alertFile = new File(logPath + "alert_" + getTime("YYYYMM") + ".json");
 		}
 		FileWriter fw = new FileWriter(logFile, true);
 		BufferedWriter bw = new BufferedWriter(fw);
@@ -238,11 +257,10 @@ public class Gop {
 				alertBw.write("alert time :" + data.time);
 				alertBw.newLine();
 				alertBw.newLine();
-				if(common[i].alertScriptIsOs)
-				{
+				if (common[i].alertScriptIsOs) {
 					alertBw.write(ReadOs.executeS(common[i].alertScript));
-				}else {
-					String tmp="echo \'" +common[i].alertScript + ";\' |gsqlnet sys gliese --no-prompt";
+				} else {
+					String tmp = "echo \'" + common[i].alertScript + ";\' |gsqlnet sys gliese --no-prompt";
 					alertBw.write(ReadOs.executeS(tmp));
 				}
 				alertBw.newLine();
@@ -271,9 +289,9 @@ public class Gop {
 		if (gColumn == true) {
 //			System.out.println("** instance name :" + gName);
 
-			System.out.format("%24s",  "NAME : " + ANSI_PURPLE + gName + ANSI_RESET);
-			System.out.format("%28s",  "HOST : " + ANSI_PURPLE + gHost + ANSI_RESET);
-			System.out.format("%24s",  "PORT : " + ANSI_PURPLE + gPort + ANSI_RESET);
+			System.out.format("%24s", "NAME : " + ANSI_PURPLE + gName + ANSI_RESET);
+			System.out.format("%28s", "HOST : " + ANSI_PURPLE + gHost + ANSI_RESET);
+			System.out.format("%24s", "PORT : " + ANSI_PURPLE + gPort + ANSI_RESET);
 
 			System.out.println("");
 			System.out.format("%34s", ANSI_GREEN + "time" + ANSI_RESET);
