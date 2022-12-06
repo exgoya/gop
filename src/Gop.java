@@ -71,24 +71,24 @@ public class Gop {
 			gStampLog(config, gson, logFile, alertFile);
 			break;
 		case "client":
-			ReadLog rl = new ReadLog(new File(config.host.logPath+"log_"+ getTime("YYYYMMdd")+".json"), gson, config);
-			switch (args[2]) {
+			ReadLog rl = new ReadLog(new File(args[2]), gson, config);
+			switch (args[3]) {
 			case "all":
 				printTableMap(rl.timeMap);
 				break;
 			case "time":
-				LocalDateTime stTs = stringToDate(args[3]);
-				LocalDateTime edTs = stringToDate(args[4]);
+				LocalDateTime stTs = stringToDate(args[4]);
+				LocalDateTime edTs = stringToDate(args[5]);
 				rl.setRangeTimeMap(stTs, edTs);
 				printTableMap(rl.rangeTimeMap);
 				break;
 			case "name":
-				String name = args[3];
+				String name = args[4];
 				rl.setNameMap(name);
 				printTableMap(rl.nameMap);
 				break;
 			case "tag":
-				String tag = args[3];
+				String tag = args[4];
 				rl.setTagMap(tag);
 				printTableMap(rl.tagMap);
 				break;

@@ -64,10 +64,10 @@ sample : <config> <demon | clinet> <time|name|tag|all> <timerange|query name|tag
 
 sample use  >>
 - resource/config.json demon
-- resource/config.json client time '2022-09-05 03:14:40' '2022-09-05 03:15:00'
-- resource/config.json client name execute
-- resource/config.json clinen tag tag1
-- resource/config.json client all
+- resource/config.json client resource/log_20221201.json time '2022-09-05 03:14:40' '2022-09-05 03:15:00'
+- resource/config.json client resource/log_20221201.json name execute
+- resource/config.json clinen resource/log_20221201.json tag tag1
+- resource/config.json client resource/log_20221201.json all
 
 ex )
  java -Xmx100M -jar gop.jar resource/config.json demon
