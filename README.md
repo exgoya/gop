@@ -71,13 +71,12 @@ client option:
    			| -tag <tag name> ]
 		    [ -head | -tail <print count> ] 
 
-
-
-sample use  >  
+---
+sample use
   
 java -Xmx100M -jar gop.jar -config resource/config.json -demon  
 
-java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -time '2022-09-05 03:14:40.000' '2022-09-05 03:15:00.000'  
+java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -time '2022-12-01 03:14:40.000' '2022-12-01 03:15:00.000'  
 java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -name execute -tail 10  
 java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -tag tag1 -head 10  
 java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json  
