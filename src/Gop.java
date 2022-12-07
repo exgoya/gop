@@ -192,8 +192,6 @@ public class Gop {
 		Data beforeData = new Data(null, null);
 		Data calData = new Data(null, null);
 
-//		System.out.println(logFile.getName());
-
 		while (true) {
 
 			Data data = db.getCommonQuery(arrPstmt);
