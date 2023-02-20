@@ -3,15 +3,14 @@ package model;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class Config {
-	public Setting setting;
-	public Measure[] measure;
+public class Setting {
 
-	public Config(Setting setting, Measure[] measure) {
-		super();
-		this.setting = setting;
-		this.measure = measure;
-	}
+	public JdbcSource jdbcSource;
+	public int timeInterval;
+	public boolean consolePrint;
+	public int pagesize;
+	public FileLog fileLog;
+	public Stacker stacker;
 
 	@Override
 	public String toString() {

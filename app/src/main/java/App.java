@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
@@ -15,17 +16,21 @@ import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
+import javax.naming.directory.InvalidAttributeIdentifierException;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import controller.Rest;
-import model.Common;
+import model.Measure;
 import model.Config;
 import model.Data;
+import model.FileLog;
 import model.ResultCommon;
-import service.Db;
+import model.Stacker;
+import service.Database;
 import service.ReadLog;
 import service.ReadOs;
+import service.Rest;
 import service.CommandLineParser;
 
 /*
@@ -104,16 +109,8 @@ public class App {
 
 		Config config = readAndConvConf(rFile, Config.class, gson);
 
-
-		File logFile = new File(config.host.logPath + "log_" + getTime("YYYYMMdd") + ".json");
-		System.out.println(logFile);
-		File alertFile = new File(config.host.logPath + "alert_" + getTime("YYYYMM") + ".json");
-		gName = config.host.name;
-		gHost = config.host.ip;
-		gPort = Integer.toString(config.host.port);
-
 		if (demon) {
-			gStampLog(config, gson, logFile, alertFile);
+			gStampLog(config, gson);
 		} else if (client) {
 			ReadLog rl = new ReadLog(new File(log), gson, config);
 
@@ -189,11 +186,11 @@ public class App {
 		return null;
 	}
 
-	private static void gStampLog(Config config, Gson gson, File logFile, File alertFile)
+	private static void gStampLog(Config config, Gson gson)
 			throws Exception {
 
 		// db
-		Db db = new Db(config);
+		Database db = new Database(config);
 
 		int printRow = 0;
 		Data beforeData = new Data(null, null);
@@ -229,30 +226,34 @@ public class App {
 				beforeData = data.newInstance(data);
 			}
 
-			writeJson(calData, gson, logFile, alertFile, config.host.logPath, config.common);
-			// writeJson(rc2, gson, logFile, alertFile);
+
+			if (config.setting.fileLog.enable) {
+				writeJson(calData, gson, config);
+			}
+			if(config.setting.stacker.enable){
+				postJson(calData, gson, config);
+			}
 
 			// print console (table)
-			if (config.host.print) {
+			if (config.setting.consolePrint) {
 				printTable(calData);
 				printRow++;
-				if (printRow % config.host.pagesize == 0) {
+				if (printRow % config.setting.pagesize == 0) {
 					gColumn = true;
 				}
 			}
 			data = null;
 			// rc2 = null;
-			Thread.sleep(config.host.timeInterval);
+			Thread.sleep(config.setting.timeInterval);
 		}
 	}
-
 	private static Data diffDataCal(Data data, Data beforeData, Config config) {
 		// Data tempData = new Data(data.time, data.rc);
 		// ResultCommon[] rc = new ResultCommon[data.rc.length];
 		// Data tempData = new Data(data.time, rc);
 		Data cal = data.newInstance(data);
 		for (int i = 0; i < data.rc.length; i++) {
-			if (config.common[i].diff) {
+			if (config.measure[i].diff) {
 				cal.rc[i].value = data.rc[i].value - beforeData.rc[i].value;
 			}
 		}
@@ -274,48 +275,64 @@ public class App {
 
 		return gson.fromJson(reader, Config.class);
 	}
+	private static void postJson(Data data, Gson gson, Config config) {
 
-	private static void writeJson(Data data, Gson gson, File logFile, File alertFile, String logPath, Common[] common)
-			throws Exception {
+		//for rest
+		String gRcs = gson.toJson(data.rc);
 
-		if (!logFile.getName().equals(logPath + "log_" + getTime("YYYYMMdd") + ".json")) {
-			logFile = new File(logPath + "log_" + getTime("YYYYMMdd") + ".json");
+		//post stacker
+		String gRcUnit = "{ \"point\" : "+gRcs+"}";
+		String postBody=gRcUnit.replaceAll("false","0").replaceAll("true","1");
+		
+		// System.out.println("xxX:"+tmp1);
+		// System.out.println("xxX:"+tmp1.length());
+		Rest rest = new Rest();
+		try {
+			String postUrl= config.setting.stacker.baseUrl+config.setting.stacker.dbName+"/gop";
+			rest.sendPOST(postUrl,postBody);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		if (!alertFile.getName().equals(logPath + "alert_" + getTime("YYYYMM") + ".json")) {
-			alertFile = new File(logPath + "alert_" + getTime("YYYYMM") + ".json");
+		//Thread.sleep(1000);
+		// rest.sendGET("http://192.168.0.120:5108/dbs/gop/test7");	
+	}
+
+	private static void writeJson(Data data, Gson gson, Config config) throws IOException {
+
+			String basePath = config.setting.fileLog.logPath;
+
+			File logFile = new File(basePath + "log_" + getTime("YYYYMMdd") + ".json");
+			System.out.println(logFile);
+			File alertFile = new File(basePath + "alert_" + getTime("YYYYMM") + ".json");
+
+		if (!logFile.getName().equals(basePath + "log_" + getTime("YYYYMMdd") + ".json")) {
+			logFile = new File(basePath + "log_" + getTime("YYYYMMdd") + ".json");
+		}
+		if (!alertFile.getName().equals(basePath + "alert_" + getTime("YYYYMM") + ".json")) {
+			alertFile = new File(basePath + "alert_" + getTime("YYYYMM") + ".json");
 		}
 		FileWriter fw = new FileWriter(logFile, true);
 		BufferedWriter bw = new BufferedWriter(fw);
 
 		FileWriter alertFw = new FileWriter(alertFile, true);
 		BufferedWriter alertBw = new BufferedWriter(alertFw);
-
-//		for (ResultCommon resultCommon : data.rc) {
 		String gRc = gson.toJson(data);
-		//for rest
-		String gRcs = gson.toJson(data.rc);
-
-		//write file
 		bw.write(gRc);
+		// }	
 
-		//post stacker
-		String gRcUnit = "{ \"point\" : "+gRcs+"}";
-		String tmp1=gRcUnit.replaceAll("false","0").replaceAll("true","1");
-		
-		// System.out.println("xxX:"+tmp1);
-		// System.out.println("xxX:"+tmp1.length());
-		Rest.sendPOST("http://localhost:5108/dbs/gop/test1",tmp1);
-		
+		Measure[] ms = config.measure;
+
 		for (int i = 0; i < data.rc.length; i++) {
-			if (data.rc[i].alert && common[i].alertScript != null) {
+			if (data.rc[i].alert && ms[i].alertScript != null) {
 				alertBw.newLine();
 				alertBw.write("alert time :" + data.time);
 				alertBw.newLine();
 				alertBw.newLine();
-				if (common[i].alertScriptIsOs) {
-					alertBw.write(ReadOs.executeS(common[i].alertScript));
+				if (ms[i].alertScriptIsOs) {
+					alertBw.write(ReadOs.executeS(ms[i].alertScript));
 				} else {
-					String tmp = "echo \'" + common[i].alertScript + ";\' |gsqlnet sys gliese --no-prompt";
+					String tmp = "echo \'" + ms[i].alertScript + ";\' |gsqlnet sys gliese --no-prompt";
 					alertBw.write(ReadOs.executeS(tmp));
 				}
 				alertBw.newLine();

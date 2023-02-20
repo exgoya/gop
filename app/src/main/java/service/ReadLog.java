@@ -37,14 +37,14 @@ public class ReadLog {
 		String line = "";
 
 		int i = 0;
-		ResultCommon[] rc = new ResultCommon[config.common.length];
+		ResultCommon[] rc = new ResultCommon[config.measure.length];
 
 		while ((line = reader.readLine()) != null) {
 			Data obj = gson.fromJson(line, Data.class);
 			LocalDateTime ts = stringToTimestamp(obj.time, gson);
 			// if (i >= config.common.length) {
-			if (i >= config.common.length) {
-				rc = new ResultCommon[config.common.length];
+			if (i >= config.measure.length) {
+				rc = new ResultCommon[config.measure.length];
 				i = 0;
 			}
 			// rc[i] = obj.rc[i];

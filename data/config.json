@@ -1,16 +1,31 @@
 {
-	"host": {
-		"name": "g1n1",
-		"ip": "127.0.0.1",
-		"port": "30009",
-		"user": "test",
-		"password": "test",
-		"timeInterval": 1000,
-		"logPath": "data/",
-		"print": "true",
-		"pagesize": "10"
+	"setting": {
+		"jdbcSource" : {
+			"url":"jdbc:goldilocks://192.168.0.120:30009/",
+			"dbName": "gop",
+			"driverClass":"sunje.goldilocks.jdbc.GoldilocksDriver",
+			"jdbcProperties":[
+				{ "name":"user", "value":"test" },
+				{ "name":"password", "value":"test" },
+				{ "name":"statement_pool_on", "value":"true" },
+				{ "name":"statement_pool_size", "value":"20" }
+			]
+		},
+		"timeInterval": 5000,
+		"consolePrint": true,
+		"pageSize": "10",
+		"fileLog" : {
+			"enable":true,
+			"logPath": "data/",
+			"type":"ansi"
+		},
+		"stacker" : {
+			"enable":true,
+			"baseUrl": "http://192.168.0.120:5108/dbs/",
+			"dbName":"gop"
+		}
 	},
-	"common": [
+	"measure": [
 		{
 			"name": "exec",
 			"diff": true,

@@ -1,43 +1,51 @@
 package service;
 
 import java.sql.*;
+import java.util.Properties;
 
 import com.google.gson.GsonBuilder;
 
-import model.Common;
+import model.Measure;
 import model.Config;
 import model.Data;
+import model.JdbcProperty;
 import model.ResultCommon;
-import sunje.goldilocks.jdbc.GoldilocksDataSource;
 
-public class Db {
+public class Database {
 	Config sConfig;
 
-	public Db(Config config) {
+	public Database(Config config) {
 		sConfig = config;
 	}
 
-	public Connection createConnection() {
-		// String sClass = "sunje.goldilocks.jdbc.GoldilocksDriver";
-		// String sUrl = "jdbc:goldilocks://" + sConfig.host.ip + ":" +
-		// sConfig.host.port + "/test";
-		GoldilocksDataSource sDataSource = new GoldilocksDataSource();
-		sDataSource.setDatabaseName("gop");
-		sDataSource.setServerName(sConfig.host.ip);
-		sDataSource.setPortNumber(sConfig.host.port);
-		sDataSource.setUser(sConfig.host.user);
-		sDataSource.setPassword(sConfig.host.password);
-		sDataSource.setStatementPoolOn(true);
-		sDataSource.setStatementPoolSize(20);
+	public Connection createConnection()
+    {
+        try
+        {
+            Class.forName(sConfig.setting.jdbcSource.driverClass);
+        }
+        catch (ClassNotFoundException sException)
+        {
+        }
+		Properties prop = new Properties();
+		JdbcProperty jpArr[] = sConfig.setting.jdbcSource.jdbcProperties;
 
+		for (JdbcProperty jdbcProperty : jpArr) {
+			prop.setProperty(jdbcProperty.name, jdbcProperty.value);
+		}
 		boolean createConnection = true;
 		int i = 0;
+
+		String dbUrl=sConfig.setting.jdbcSource.url+sConfig.setting.jdbcSource.dbName;
 		while (createConnection) {
-			try {
-				return sDataSource.getConnection();
+			try {	
+				System.out.println(dbUrl);
+
+				return DriverManager.getConnection(dbUrl, prop);
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
+				System.out.println(dbUrl);
 				System.out.println("[SQLSTATE:"+ e.getSQLState() + "] getConnection error! retry con : " + i);
+				e.printStackTrace();
 
 				i++;
 			}
@@ -49,20 +57,19 @@ public class Db {
 			}
 		}
 		return null;
+    }
 
-	}
-
-	public PreparedStatement[] createConAndPstmt(Db db) {
+	public PreparedStatement[] createConAndPstmt(Database db) {
 		Connection con = null;
 		PreparedStatement[] arrPstmt = null;
 
 		do {
 			con = db.createConnection();
-			arrPstmt = new PreparedStatement[sConfig.common.length];
-			for (int i = 0; i < sConfig.common.length; i++) {
-				if (!sConfig.common[i].sqlIsOs) {
+			arrPstmt = new PreparedStatement[sConfig.measure.length];
+			for (int i = 0; i < sConfig.measure.length; i++) {
+				if (!sConfig.measure[i].sqlIsOs) {
 					try {
-						arrPstmt[i] = con.prepareStatement(sConfig.common[i].sql);
+						arrPstmt[i] = con.prepareStatement(sConfig.measure[i].sql);
 					} catch (SQLException e) {
 						// TODO Auto-generated catch block
 						// e.printStackTrace();
@@ -85,24 +92,24 @@ public class Db {
 
 	public Data getCommonQuery(PreparedStatement[] arrPstmt) {
 
-		ResultCommon[] resultArr = new ResultCommon[sConfig.common.length];
+		ResultCommon[] resultArr = new ResultCommon[sConfig.measure.length];
 
 		String sysTimestamp = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss.SSS").create()
 				.toJson(new Timestamp(System.currentTimeMillis()));
 
-		for (int i = 0; i < sConfig.common.length; i++) {
+		for (int i = 0; i < sConfig.measure.length; i++) {
 
 			// Statement stmt = con.createStatement();
 			boolean alert = false;
-			if (sConfig.common[i].sqlIsOs) {
+			if (sConfig.measure[i].sqlIsOs) {
 				int queryValue = 0;
 
 				ReadOs oc = new ReadOs();
-				queryValue = oc.execute(sConfig.common[i].sql);
+				queryValue = oc.execute(sConfig.measure[i].sql);
 
-				alert = alertCheck(sConfig.common[i], queryValue);
+				alert = alertCheck(sConfig.measure[i], queryValue);
 
-				resultArr[i] = new ResultCommon(sConfig.common[i].name, queryValue, sConfig.common[i].tag, alert);
+				resultArr[i] = new ResultCommon(sConfig.measure[i].name, queryValue, sConfig.measure[i].tag, alert);
 
 			} else {
 				ResultSet rs;
@@ -113,15 +120,15 @@ public class Db {
 					ResultSetMetaData rsMeta = rs.getMetaData();
 					if (rsMeta.getColumnCount() != 1) {
 						System.out
-								.println("not support multiple column query _ Query name : " + sConfig.common[i].name);
+								.println("not support multiple column query _ Query name : " + sConfig.measure[i].name);
 					}
 
 					int queryValue = 0;
 					while (rs.next()) {
 						queryValue = rs.getInt(1);
-						alert = alertCheck(sConfig.common[i], queryValue);
+						alert = alertCheck(sConfig.measure[i], queryValue);
 
-						resultArr[i] = new ResultCommon(sConfig.common[i].name, queryValue, sConfig.common[i].tag,
+						resultArr[i] = new ResultCommon(sConfig.measure[i].name, queryValue, sConfig.measure[i].tag,
 								alert);
 					}
 					rs.close();
@@ -137,7 +144,7 @@ public class Db {
 		return new Data(sysTimestamp, resultArr);
 	}
 
-	private boolean alertCheck(Common common, int queryValue) {
+	private boolean alertCheck(Measure common, int queryValue) {
 		switch (common.alertPolicy) {
 		case 1:
 			if (common.alertValue < queryValue) {
