@@ -15,18 +15,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.Set;
-
-import javax.naming.directory.InvalidAttributeIdentifierException;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import model.Measure;
 import model.Config;
 import model.Data;
-import model.FileLog;
 import model.ResultCommon;
-import model.Stacker;
 import service.Database;
 import service.ReadLog;
 import service.ReadOs;
@@ -40,9 +35,6 @@ import service.CommandLineParser;
 public class App {
 	static boolean gColumn = true;
 	static File rFile = null;
-	static String gName = "";
-	static String gHost = "";
-	static String gPort = "";
 
 	public static final String ANSI_RESET = "\u001B[0m";
 	public static final String ANSI_BLACK = "\u001B[30m";
@@ -54,12 +46,12 @@ public class App {
 	public static final String ANSI_CYAN = "\u001B[36m";
 	public static final String ANSI_WHITE = "\u001B[37m";
 
-    public static void main(String[] args) throws Exception {
-        new App().startApp(args);
-    }
+	public static void main(String[] args) throws Exception {
+		new App().startApp(args);
+	}
 
-    public void startApp(String[] args) throws Exception {
-        CommandLineParser clp = new CommandLineParser(args);
+	public void startApp(String[] args) throws Exception {
+		CommandLineParser clp = new CommandLineParser(args);
 
 		boolean help = clp.getFlag("help");
 		if (help) {
@@ -104,12 +96,10 @@ public class App {
 		rFile = new File(configFile);
 		Gson gson = new GsonBuilder().setLenient().create();
 
-		String currentPath = new java.io.File(".").getCanonicalPath();
-		System.out.println("Current dir:" + currentPath);
-
 		Config config = readAndConvConf(rFile, Config.class, gson);
 
 		if (demon) {
+			printInfo(config);
 			gStampLog(config, gson);
 		} else if (client) {
 			ReadLog rl = new ReadLog(new File(log), gson, config);
@@ -133,7 +123,24 @@ public class App {
 		} else {
 			System.out.println("invalid argument");
 		}
-    }
+	}
+
+	private void printInfo(Config config) {
+		try {
+			String currentPath = new java.io.File(".").getCanonicalPath();
+			System.out.println("Current dir : " + currentPath);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		System.out.println("Source jdbc url : " + config.setting.jdbcSource.url);
+		System.out.println("Write file : " + config.setting.fileLog.enable);
+		System.out.println("Write file path : " + config.setting.fileLog.logPath);
+		System.out.println("Write stacker : " + config.setting.stacker.enable);
+		System.out.println("Write stacker : " + config.setting.stacker.baseUrl);
+		System.out.println("Write stacker db name: " + config.setting.stacker.dbName);
+	}
 
 	private static String getTime(String string) {
 		SimpleDateFormat sdf = new SimpleDateFormat(string);
@@ -156,13 +163,13 @@ public class App {
 				if (i < head) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
 					printTable(data);
-//					System.out.println("head: " +i);
+					// System.out.println("head: " +i);
 				}
 			} else if (tail > 0) {
 				if (timeKeys.size() - tail <= i) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
 					printTable(data);
-//					System.out.println("tail: " +i);
+					// System.out.println("tail: " +i);
 				}
 			} else {
 				Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
@@ -226,11 +233,10 @@ public class App {
 				beforeData = data.newInstance(data);
 			}
 
-
 			if (config.setting.fileLog.enable) {
 				writeJson(calData, gson, config);
 			}
-			if(config.setting.stacker.enable){
+			if (config.setting.stacker.enable) {
 				postJson(calData, gson, config);
 			}
 
@@ -238,7 +244,7 @@ public class App {
 			if (config.setting.consolePrint) {
 				printTable(calData);
 				printRow++;
-				if (printRow % config.setting.pagesize == 0) {
+				if (printRow % config.setting.pageSize == 0) {
 					gColumn = true;
 				}
 			}
@@ -247,6 +253,7 @@ public class App {
 			Thread.sleep(config.setting.timeInterval);
 		}
 	}
+
 	private static Data diffDataCal(Data data, Data beforeData, Config config) {
 		// Data tempData = new Data(data.time, data.rc);
 		// ResultCommon[] rc = new ResultCommon[data.rc.length];
@@ -275,36 +282,37 @@ public class App {
 
 		return gson.fromJson(reader, Config.class);
 	}
+
 	private static void postJson(Data data, Gson gson, Config config) {
 
-		//for rest
+		for (ResultCommon rc:data.rc) {
+			String measureName=rc.name;
+		}
+		// for rest
 		String gRcs = gson.toJson(data.rc);
 
-		//post stacker
-		String gRcUnit = "{ \"point\" : "+gRcs+"}";
-		String postBody=gRcUnit.replaceAll("false","0").replaceAll("true","1");
-		
+
+		// post stacker
+		String gRcUnit = "{ \"point\" : " + gRcs + "}";
+		String postBody = gRcUnit.replaceAll("false", "0").replaceAll("true", "1");
+
 		// System.out.println("xxX:"+tmp1);
 		// System.out.println("xxX:"+tmp1.length());
 		Rest rest = new Rest();
-		try {
-			String postUrl= config.setting.stacker.baseUrl+config.setting.stacker.dbName+"/gop";
-			rest.sendPOST(postUrl,postBody);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		//Thread.sleep(1000);
-		// rest.sendGET("http://192.168.0.120:5108/dbs/gop/test7");	
+
+		String postUrl = config.setting.stacker.baseUrl + config.setting.stacker.dbName + "/gop";
+		rest.sendPOST(postUrl, postBody);
+
+		// Thread.sleep(1000);
+		// rest.sendGET("http://192.168.0.120:5108/dbs/gop/test7");
 	}
 
 	private static void writeJson(Data data, Gson gson, Config config) throws IOException {
 
-			String basePath = config.setting.fileLog.logPath;
+		String basePath = config.setting.fileLog.logPath;
 
-			File logFile = new File(basePath + "log_" + getTime("YYYYMMdd") + ".json");
-			System.out.println(logFile);
-			File alertFile = new File(basePath + "alert_" + getTime("YYYYMM") + ".json");
+		File logFile = new File(basePath + "log_" + getTime("YYYYMMdd") + ".json");
+		File alertFile = new File(basePath + "alert_" + getTime("YYYYMM") + ".json");
 
 		if (!logFile.getName().equals(basePath + "log_" + getTime("YYYYMMdd") + ".json")) {
 			logFile = new File(basePath + "log_" + getTime("YYYYMMdd") + ".json");
@@ -319,7 +327,7 @@ public class App {
 		BufferedWriter alertBw = new BufferedWriter(alertFw);
 		String gRc = gson.toJson(data);
 		bw.write(gRc);
-		// }	
+		// }
 
 		Measure[] ms = config.measure;
 
@@ -359,11 +367,7 @@ public class App {
 
 		int i = 0;
 		if (gColumn == true) {
-//			System.out.println("** instance name :" + gName);
-
-			System.out.format("%24s", "NAME : " + ANSI_PURPLE + gName + ANSI_RESET);
-			System.out.format("%28s", "HOST : " + ANSI_PURPLE + gHost + ANSI_RESET);
-			System.out.format("%24s", "PORT : " + ANSI_PURPLE + gPort + ANSI_RESET);
+			// System.out.println("** instance name :" + gName);
 
 			System.out.println("");
 			System.out.format("%34s", ANSI_GREEN + "time" + ANSI_RESET);

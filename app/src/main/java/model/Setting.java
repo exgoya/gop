@@ -8,9 +8,10 @@ public class Setting {
 	public JdbcSource jdbcSource;
 	public int timeInterval;
 	public boolean consolePrint;
-	public int pagesize;
+	public int pageSize;
 	public FileLog fileLog;
 	public Stacker stacker;
+	public String type; // ansi or csv
 
 	@Override
 	public String toString() {

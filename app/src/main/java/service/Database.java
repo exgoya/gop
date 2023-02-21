@@ -39,8 +39,6 @@ public class Database {
 		String dbUrl=sConfig.setting.jdbcSource.url+sConfig.setting.jdbcSource.dbName;
 		while (createConnection) {
 			try {	
-				System.out.println(dbUrl);
-
 				return DriverManager.getConnection(dbUrl, prop);
 			} catch (SQLException e) {
 				System.out.println(dbUrl);

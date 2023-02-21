@@ -14,10 +14,10 @@
 		"timeInterval": 5000,
 		"consolePrint": true,
 		"pageSize": "10",
+		"printType":"ansi",
 		"fileLog" : {
 			"enable":true,
-			"logPath": "data/",
-			"type":"ansi"
+			"logPath": "data/"
 		},
 		"stacker" : {
 			"enable":true,

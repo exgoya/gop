@@ -10,10 +10,11 @@ public class ReadOs {
 	int execute(String cmd) {
 		return Integer.parseInt(runS(cmd));
 	}
+
 	public static String executeS(String cmd) {
 		return runS(cmd);
 	}
-	
+
 	private static String runS(String cmd) {
 		Process process = null;
 		Runtime runtime = Runtime.getRuntime();
@@ -62,7 +63,7 @@ public class ReadOs {
 				// System.out.println(msg);
 			} else {
 				// shell실행이비정상종료되었을경우
-				System.out.println("비정상종료: "+cmd);
+				System.out.println("비정상종료: " + cmd);
 				System.out.println(successOutput.toString());
 			}
 
@@ -88,6 +89,6 @@ public class ReadOs {
 				e1.printStackTrace();
 			}
 		}
-			return msg;
+		return msg;
 	}
 }
