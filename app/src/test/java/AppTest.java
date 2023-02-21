@@ -5,8 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import service.Rest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.io.IOException;
 
 class AppTest {

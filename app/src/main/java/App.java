@@ -285,9 +285,9 @@ public class App {
 
 	private static void postJson(Data data, Gson gson, Config config) {
 
-		for (ResultCommon rc:data.rc) {
-			String measureName=rc.name;
-		}
+		// for (ResultCommon rc:data.rc) {
+		// 	String measureName=rc.name;
+		// }
 		// for rest
 		String gRcs = gson.toJson(data.rc);
 

@@ -41,9 +41,7 @@ public class Database {
 			try {	
 				return DriverManager.getConnection(dbUrl, prop);
 			} catch (SQLException e) {
-				System.out.println(dbUrl);
 				System.out.println("[SQLSTATE:"+ e.getSQLState() + "] getConnection error! retry con : " + i);
-				e.printStackTrace();
 
 				i++;
 			}
