@@ -92,21 +92,21 @@ public class ReadLog {
 		}
 	}
 
-	public void setNameMap(String name) {
+	public void setNameMap(String measure) {
 		boolean exit = true;
 		Set<LocalDateTime> timeKeys = timeMap.keySet();
 		for (LocalDateTime key : timeKeys) {
 			ResultCommon[] rc = timeMap.get(key);
 			ResultCommon[] tempRc = new ResultCommon[1];
 			for (int i = 0; i < rc.length; i++) {
-				if (rc[i].name.equals(name)) {
+				if (rc[i].measure.equals(measure)) {
 					tempRc[0] = rc[i];
 					exit = false;
 				}
 				;
 			}
 			if (exit) {
-				System.out.println("name :" + name + " is not valid");
+				System.out.println("measure :" + measure + " is not valid");
 				System.exit(0);
 			}
 			nameMap.put(key, tempRc);

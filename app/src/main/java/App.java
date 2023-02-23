@@ -300,7 +300,7 @@ public class App {
 		// System.out.println("xxX:"+tmp1.length());
 		Rest rest = new Rest();
 
-		String postUrl = config.setting.stacker.baseUrl + config.setting.stacker.dbName + "/gop";
+		String postUrl = config.setting.stacker.baseUrl + config.setting.stacker.dbName;
 		rest.sendPOST(postUrl, postBody);
 
 		// Thread.sleep(1000);
@@ -359,7 +359,7 @@ public class App {
 
 		for (int i = 0; i < data.rc.length; i++) {
 			if (data.rc[i] != null) {
-				column[i] = data.rc[i].name;
+				column[i] = data.rc[i].measure;
 				row[i] = alertFormat(data.rc[i].value, data.rc[i].alert);
 				// System.out.println(rc[i].toString());
 			}

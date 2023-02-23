@@ -6,14 +6,14 @@ import com.google.gson.GsonBuilder;
 
 public class ResultCommon {
 
-	public String name;
+	public String measure;
 	public int value;
 	public String tag;
 	public boolean alert;
 
-	public ResultCommon(String name, int value,  String tag, boolean alert) {
+	public ResultCommon(String measure, int value,  String tag, boolean alert) {
 		super();
-		this.name = name;
+		this.measure = measure;
 		this.value = value;
 		this.tag = tag;
 		this.alert = alert;
@@ -21,12 +21,12 @@ public class ResultCommon {
 
 
 	public String getName() {
-		return name;
+		return measure;
 	}
 
 
-	public void setName(String name) {
-		this.name = name;
+	public void setName(String measure) {
+		this.measure = measure;
 	}
 
 

@@ -20,7 +20,7 @@ public class Data {
 		// new ResultCommon[data.rc.length];
 
 		for (int i = 0; i < data.rc.length; i++) {
-			rc[i] = new ResultCommon(data.rc[i].name, data.rc[i].value, data.rc[i].tag, data.rc[i].alert);
+			rc[i] = new ResultCommon(data.rc[i].measure, data.rc[i].value, data.rc[i].tag, data.rc[i].alert);
 		}
 		this.rc = rc;
 	}

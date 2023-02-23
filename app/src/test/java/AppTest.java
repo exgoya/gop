@@ -3,13 +3,12 @@
  */
 import org.junit.jupiter.api.Test;
 
-import service.Rest;
 
 import java.io.IOException;
 
 class AppTest {
     @Test void appHasAGreeting() throws IOException {
-        Rest rs = new Rest();
-        rs.sendGET("http://192.168.0.120:5108/dbs/gop/test1");
+        //Rest rs = new Rest();
+        //rs.sendGET("http://192.168.0.120:5108/dbs/gop/test1");
     }
 }

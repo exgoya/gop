@@ -12,7 +12,7 @@
 				{ "name":"login_timeout", "value":"3" }
 			]
 		},
-		"timeInterval": 5000,
+		"timeInterval": 1000,
 		"consolePrint": true,
 		"pageSize": "10",
 		"printType":"ansi",
