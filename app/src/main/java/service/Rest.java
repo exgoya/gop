@@ -3,6 +3,7 @@ package service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.http.HttpResponse.ResponseInfo;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -78,12 +79,11 @@ public class Rest {
 			// print result
 			// System.out.println(response.toString());
 			httpClient.close();
-		} catch (ClientProtocolException e) {
+		} catch (Exception e) {
+			//System.out.println("post err : "+httpResponse.getStatusLine().getStatusCode() + requestURL);
+			System.out.println("post err : "+ requestURL);
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 }
