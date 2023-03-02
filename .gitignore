@@ -6,3 +6,4 @@ build
 
 log_*.json
 alert_*.json
+package-lock.json
