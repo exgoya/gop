@@ -30,7 +30,7 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass = 'App'
+    mainClass = 'Gop'
 }
 
 tasks.named('test') {

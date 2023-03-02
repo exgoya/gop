@@ -21,7 +21,7 @@ $ sudo alternatives --config java
 소스를 받아서 컴파일 합니다.
 
 ```
-$ git clone https://github.com/exgoya/gop17.git
+$ git clone https://github.com/exgoya/gop.git
 'gop'에 복제합니다...
 remote: Enumerating objects: 406, done.
 remote: Counting objects: 100% (68/68), done.
@@ -30,48 +30,42 @@ remote: Total 406 (delta 33), reused 35 (delta 0), pack-reused 338
 오브젝트를 받는 중: 100% (406/406), 805.50 KiB | 15.79 MiB/s, 완료.
 델타를 알아내는 중: 100% (232/232), 완료.
 
-$ cd gop17
+$ cd gop
 
 $ ls
-README.md       app             data            gradle          gradlew         gradlew.bat     settings.gradle
+README.md       gop             data            gradle          gradlew         gradlew.bat     settings.gradle
 $ ./gradlew build
 
 BUILD SUCCESSFUL in 4s
 7 actionable tasks: 7 executed
-$ cd app/build/distributions 
+$ cd gop/build/distributions 
 $ ls
-app.tar app.zip
-$ unzip app.zip
-Archive:  app.zip
-   creating: app/
-   creating: app/lib/
-  inflating: app/lib/app.jar         
-  inflating: app/lib/goldilocks8.jar  
-  inflating: app/lib/guava-30.1.1-jre.jar  
-  inflating: app/lib/httpclient-4.5.14.jar  
-  inflating: app/lib/gson-2.10.1.jar  
-  inflating: app/lib/failureaccess-1.0.1.jar  
-  inflating: app/lib/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar  
-  inflating: app/lib/jsr305-3.0.2.jar  
-  inflating: app/lib/checker-qual-3.8.0.jar  
-  inflating: app/lib/error_prone_annotations-2.5.1.jar  
-  inflating: app/lib/j2objc-annotations-1.3.jar  
-  inflating: app/lib/httpcore-4.4.16.jar  
-  inflating: app/lib/commons-logging-1.2.jar  
-  inflating: app/lib/commons-codec-1.11.jar  
-   creating: app/bin/
-  inflating: app/bin/app             
-  inflating: app/bin/app.bat         
-$ ls -alh
-total 20360
-drwxr-xr-x@  5 exgoya  staff   160B  3  2 13:22 .
-drwxr-xr-x@ 10 exgoya  staff   320B  3  2 13:22 ..
-drwxr-xr-x@  4 exgoya  staff   128B  3  2 13:22 app
--rw-r--r--@  1 exgoya  staff   5.3M  3  2 13:22 app.tar
--rw-r--r--@  1 exgoya  staff   4.7M  3  2 13:22 app.zip
-$ cd app
+gop.tar gop.zip
+$ unzip gop.zip 
+Archive:  gop.zip
+   creating: gop/
+   creating: gop/lib/
+  inflating: gop/lib/gop.jar         
+  inflating: gop/lib/goldilocks8.jar  
+  inflating: gop/lib/guava-30.1.1-jre.jar  
+  inflating: gop/lib/httpclient-4.5.14.jar  
+  inflating: gop/lib/gson-2.10.1.jar  
+  inflating: gop/lib/failureaccess-1.0.1.jar  
+  inflating: gop/lib/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar  
+  inflating: gop/lib/jsr305-3.0.2.jar  
+  inflating: gop/lib/checker-qual-3.8.0.jar  
+  inflating: gop/lib/error_prone_annotations-2.5.1.jar  
+  inflating: gop/lib/j2objc-annotations-1.3.jar  
+  inflating: gop/lib/httpcore-4.4.16.jar  
+  inflating: gop/lib/commons-logging-1.2.jar  
+  inflating: gop/lib/commons-codec-1.11.jar  
+   creating: gop/bin/
+  inflating: gop/bin/gop             
+  inflating: gop/bin/gop.bat         
+
+$ cd gop
 $ mkdir data
-$ cp ~/git/gop17/data/config.json ./data
+$ cp ~/git/gop/data/config.json ./data
 $ ls
 bin     data    lib
 
@@ -80,8 +74,8 @@ bin     data    lib
 ## start 
   
 ```
-$ ./bin/app -config data/config.json -demon
-Current dir : /Users/exgoya/git/gop17/app/build/distributions/app
+% ./bin/gop -config data/config.json -demon
+Current dir : /Users/exgoya/git/gop/gop/build/distributions/gop
 Source jdbc url : jdbc:goldilocks://192.168.0.120:30009/
 Write file : true
 Write file path : data/
@@ -91,11 +85,7 @@ Write stacker db name: gop
 post err : http://192.168.0.120:5108/dbs/gop
 
                      time          exec       optdata       session     g-session          peer          lock       long_Tx
-"2023-03-02 13:24:01.217"         78655           797             1             0             0             0             0
-post err : http://192.168.0.120:5108/dbs/gop
-"2023-03-02 13:24:02.822"             7             5             1             0             0             0             0
-post err : http://192.168.0.120:5108/dbs/gop
-"2023-03-02 13:24:03.846"             7             0             1             0             0             0             0
+"2023-03-02 16:26:27.537"         78690           811             1             0             0             0             0
 ```
 
 #### Help
