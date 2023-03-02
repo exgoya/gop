@@ -6,8 +6,17 @@ gop를 사용하여 아래의 내용으로 database에 대한 상태를 확인 �
 * Query 추이
 * System 자원 사용량
 * 임계치 알람 ( 자료 수집  스크립트 발동 )
- 
- 
+
+## env
+
+Lang : JAVA SE 17 (61)  
+Database Class : DriverManager
+```
+$ wget https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.rpm
+$ sudo rpm -ivh jdk-17_linux-x64_bin.rpm
+$ sudo alternatives --config java
+
+```
 ## 시작하기: 
 소스를 받아서 컴파일 합니다.
 
