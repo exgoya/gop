@@ -7,3 +7,5 @@ build
 log_*.json
 alert_*.json
 package-lock.json
+.DS_Store
+gop/.DS_Store

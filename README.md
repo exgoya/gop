@@ -16,6 +16,21 @@ $ wget https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.rpm
 $ sudo rpm -ivh jdk-17_linux-x64_bin.rpm
 $ sudo alternatives --config java
 
+
+% ./gradlew -version
+
+------------------------------------------------------------
+Gradle 7.3
+------------------------------------------------------------
+
+Build time:   2021-11-09 20:40:36 UTC
+Revision:     96754b8c44399658178a768ac764d727c2addb37
+
+Kotlin:       1.5.31
+Groovy:       3.0.9
+Ant:          Apache Ant(TM) version 1.10.11 compiled on July 10 2021
+JVM:          17.0.6 (Oracle Corporation 17.0.6+9-LTS-190)
+OS:           Mac OS X 13.2.1 x86_64
 ```
 ## 시작하기: 
 소스를 받아서 컴파일 합니다.
@@ -82,7 +97,6 @@ Write file path : data/
 Write stacker : true
 Write stacker : http://192.168.0.120:5108/dbs/
 Write stacker db name: gop
-post err : http://192.168.0.120:5108/dbs/gop
 
                      time          exec       optdata       session     g-session          peer          lock       long_Tx
 "2023-03-02 16:26:27.537"         78690           811             1             0             0             0             0
