@@ -3,9 +3,6 @@ package service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.http.HttpResponse.ResponseInfo;
-
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -62,8 +59,8 @@ public class Rest {
 		try {
 			httpResponse = httpClient.execute(httpPost);
 
-			// System.out.println("POST Response Status:: " +
-			// httpResponse.getStatusLine().getStatusCode());
+			 System.out.println("POST Response Status:: " +
+			 httpResponse.getStatusLine().getStatusCode());
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
 					httpResponse.getEntity().getContent()));
