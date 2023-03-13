@@ -206,6 +206,7 @@ public class Gop {
 		PreparedStatement[] arrPstmt = null;
 
 		arrPstmt = db.createConAndPstmt(db);
+		boolean firstSkip = true;
 
 		while (true) {
 			Data data = null;
@@ -233,20 +234,24 @@ public class Gop {
 				beforeData = data.newInstance(data);
 			}
 
-			if (config.setting.fileLog.enable) {
-				writeJson(calData, gson, config);
-			}
-			if (config.setting.stacker.enable) {
-				postJson(calData, gson, config);
-			}
-
-			// print console (table)
-			if (config.setting.consolePrint) {
-				printTable(calData);
-				printRow++;
-				if (printRow % config.setting.pageSize == 0) {
-					gColumn = true;
+			if (!firstSkip){
+				if (config.setting.fileLog.enable) {
+					writeJson(calData, gson, config);
 				}
+				if (config.setting.stacker.enable) {
+					postJson(calData, gson, config);
+				}
+
+				// print console (table)
+				if (config.setting.consolePrint) {
+					printTable(calData);
+					printRow++;
+					if (printRow % config.setting.pageSize == 0) {
+						gColumn = true;
+					}
+				}
+			}else{
+				firstSkip=false;
 			}
 			data = null;
 			// rc2 = null;
