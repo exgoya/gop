@@ -7,6 +7,7 @@ public class Setting {
 
 	public JdbcSource jdbcSource;
 	public int timeInterval;
+	public String retention; // ansi or csv
 	public boolean consolePrint;
 	public int pageSize;
 	public FileLog fileLog;

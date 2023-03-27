@@ -15,6 +15,7 @@
 		"timeInterval": 1000,
 		"consolePrint": true,
 		"pageSize": "10",
+		"retention": "2",
 		"printType":"ansi",
 		"fileLog" : {
 			"enable":true,
