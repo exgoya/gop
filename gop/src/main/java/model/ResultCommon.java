@@ -7,11 +7,11 @@ import com.google.gson.GsonBuilder;
 public class ResultCommon {
 
 	public String measure;
-	public int value;
+	public long value;
 	public String tag;
 	public boolean alert;
 
-	public ResultCommon(String measure, int value,  String tag, boolean alert) {
+	public ResultCommon(String measure, long value,  String tag, boolean alert) {
 		super();
 		this.measure = measure;
 		this.value = value;
@@ -30,12 +30,12 @@ public class ResultCommon {
 	}
 
 
-	public int getValue() {
+	public long getValue() {
 		return value;
 	}
 
 
-	public void setValue(int value) {
+	public void setValue(long value) {
 		this.value = value;
 	}
 

@@ -6,7 +6,7 @@ import com.google.gson.GsonBuilder;
 public class Measure {
 	public String name;
 	public boolean diff;
-	public int alertValue;
+	public long alertValue;
 	public int alertPolicy;
 	public String sql;
 	public String tag;
@@ -14,7 +14,7 @@ public class Measure {
 	public String alertScript;
 	public boolean alertScriptIsOs;
 
-	public Measure(String name, boolean diff, int alertValue, int alertPolicy, String sql, String tag, boolean sqlIsOs,String alertScript, boolean alertScriptIsOs) {
+	public Measure(String name, boolean diff, long alertValue, int alertPolicy, String sql, String tag, boolean sqlIsOs,String alertScript, boolean alertScriptIsOs) {
 		super();
 		this.name = name;
 		this.diff = diff;

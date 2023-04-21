@@ -22,7 +22,7 @@
 			"logPath": "data/"
 		},
 		"stacker" : {
-			"enable":true,
+			"enable":false,
 			"baseUrl": "http://192.168.0.120:5108/dbs/",
 			"dbName":"gop"
 		}
@@ -31,7 +31,7 @@
 		{
 			"name": "exec",
 			"diff": true,
-			"sql": "select stat_value from v$system_sql_stat where stat_name = 'CALL_EXECUTE'",
+			"sql": "select stat_value + 21474836470 from v$system_sql_stat where stat_name = 'CALL_EXECUTE'",
 			"tag": "sql1"
 		},
 		{
@@ -75,7 +75,7 @@
 			"name": "long_Tx",
 			"alertValue": 0,
 			"alertPolicy": 3,
-			"sql": "select count(*) from x$transaction@local where datediff(SECOND,BEGIN_TIME,systimestamp) > 10",
+			"sql": "select count(*) + 21474836470 from x$transaction@local where datediff(SECOND,BEGIN_TIME,systimestamp) > 10",
 			"tag": "sql1"
 		}
 	]

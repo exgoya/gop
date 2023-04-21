@@ -98,7 +98,7 @@ public class Database {
 			// Statement stmt = con.createStatement();
 			boolean alert = false;
 			if (sConfig.measure[i].sqlIsOs) {
-				int queryValue = 0;
+				long queryValue = 0;
 
 				ReadOs oc = new ReadOs();
 				queryValue = oc.execute(sConfig.measure[i].sql);
@@ -119,9 +119,9 @@ public class Database {
 								.println("not support multiple column query _ Query name : " + sConfig.measure[i].name);
 					}
 
-					int queryValue = 0;
+					long queryValue = 0;
 					while (rs.next()) {
-						queryValue = rs.getInt(1);
+						queryValue = rs.getLong(1);
 						alert = alertCheck(sConfig.measure[i], queryValue);
 
 						resultArr[i] = new ResultCommon(sConfig.measure[i].name, queryValue, sConfig.measure[i].tag,
@@ -140,7 +140,7 @@ public class Database {
 		return new Data(sysTimestamp, resultArr);
 	}
 
-	private boolean alertCheck(Measure common, int queryValue) {
+	private boolean alertCheck(Measure common, long queryValue) {
 		switch (common.alertPolicy) {
 		case 1:
 			if (common.alertValue < queryValue) {
