@@ -34,18 +34,6 @@ import service.CRetention;
  */
 
 public class Gop {
-	static boolean gColumn = true;
-	static File rFile = null;
-
-	public static final String ANSI_RESET = "\u001B[0m";
-	public static final String ANSI_BLACK = "\u001B[30m";
-	public static final String ANSI_RED = "\u001B[31m";
-	public static final String ANSI_GREEN = "\u001B[32m";
-	public static final String ANSI_YELLOW = "\u001B[33m";
-	public static final String ANSI_BLUE = "\u001B[34m";
-	public static final String ANSI_PURPLE = "\u001B[35m";
-	public static final String ANSI_CYAN = "\u001B[36m";
-	public static final String ANSI_WHITE = "\u001B[37m";
 
 	public static void main(String[] args) throws Exception {
 		new Gop().startApp(args);
@@ -94,8 +82,7 @@ public class Gop {
 		String tagArg = clp.getArgumentValue("tag")[0];
 		String nameArg = clp.getArgumentValue("name")[0];
 		
-
-		rFile = new File(configFile);
+		File rFile = new File(configFile);
 		Gson gson = new GsonBuilder().setLenient().create();
 
 		Config config = readAndConvConf(rFile, Config.class, gson);
@@ -170,31 +157,31 @@ public class Gop {
 			if (head > 0) {
 				if (i < head) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-					printTable(data);
+					printTable(data,false);
 					sumDt=sumData(sumDt,data);
 					// System.out.println("head: " +i);
 				}
 			} else if (tail > 0) {
 				if (timeKeys.size() - tail <= i) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-					printTable(data);
+					printTable(data,false);
 					sumDt=sumData(sumDt,data);
 					// System.out.println("tail: " +i);
 				}
 			} else {
 				Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-				printTable(data);
+				printTable(data,false);
 				sumDt=sumData(sumDt,data);
 			}
 			i++;
 		}
-		printTable(sumDt);
-		printTable(avgData(sumDt,timeKeys.size()));
+		printTable(sumDt,true);
+		printTable(avgData(sumDt,timeKeys.size()),false);
 	}
 
 	private static Data avgData(Data sumDt, int size) {
 		sumDt.time = "AVG:                     ";
-		
+
 		for (ResultCommon rc : sumDt.rc) {
 			rc.value = rc.value/size;
 		}
@@ -242,6 +229,7 @@ public class Gop {
 
 		arrPstmt = db.createConAndPstmt(db);
 		boolean firstSkip = true;
+		boolean gColumn = true;
 
 		while (true) {
 			Data data = null;
@@ -279,7 +267,7 @@ public class Gop {
 
 				// print console (table)
 				if (config.setting.consolePrint) {
-					printTable(calData);
+					gColumn = printTable(calData,gColumn);
 					printRow++;
 					if (printRow % config.setting.pageSize == 0) {
 						gColumn = true;
@@ -392,7 +380,8 @@ public class Gop {
 		alertBw.close();
 	}
 
-	private static void printTable(Data data) {
+
+	private static Boolean printTable(Data data,Boolean gColumn) {
 		// TODO Auto-generated method stub
 		String[] column = new String[data.rc.length];
 		String[] row = new String[data.rc.length];
@@ -434,6 +423,7 @@ public class Gop {
 			}
 		}
 		System.out.format("%n");
+		return gColumn;
 	}
 
 	private static String alertFormat(long value, boolean alert) {
@@ -449,4 +439,14 @@ public class Gop {
 	public Object startApp(String string, String string2) {
 		return null;
 	}
+	
+	public static final String ANSI_RESET = "\u001B[0m";
+	public static final String ANSI_BLACK = "\u001B[30m";
+	public static final String ANSI_RED = "\u001B[31m";
+	public static final String ANSI_GREEN = "\u001B[32m";
+	public static final String ANSI_YELLOW = "\u001B[33m";
+	public static final String ANSI_BLUE = "\u001B[34m";
+	public static final String ANSI_PURPLE = "\u001B[35m";
+	public static final String ANSI_CYAN = "\u001B[36m";
+	public static final String ANSI_WHITE = "\u001B[37m";
 }
