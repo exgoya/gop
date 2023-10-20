@@ -156,7 +156,15 @@ public class Gop {
 			i++;
 		}
 		printTable(sumDt,true,printCSV);
-		printTable(avgData(sumDt,timeKeys.size()),false,printCSV);
+		int avgNum=0;
+		if(head > 0){
+			avgNum=head;
+		}else if (tail > 0){
+			avgNum=tail;
+		}else{
+			avgNum=timeKeys.size();
+		}
+		printTable(avgData(sumDt,avgNum),false,printCSV);
 	}
 
 	private static Data avgData(Data sumDt, int size) {

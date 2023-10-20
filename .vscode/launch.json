@@ -35,8 +35,24 @@
                 "-log",
                 "data/log_20231021.json",
                 "-time",
-                "2023-10-20 00:11:22.108",
+                "2023-10-21 00:11:26.464",
                 "2023-10-21 00:11:30.889",
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Launch Gop tail",
+            "request": "launch",
+            "mainClass": "Gop",
+            "projectName": "gop",
+            "args": [
+                "-config",
+                "data/config.json",
+                "-client",
+                "-log",
+                "data/log_20231021.json",
+                "-tail",
+                "10"
             ]
         }
     ]
