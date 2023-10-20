@@ -1,7 +1,7 @@
 {
 	"setting": {
 		"jdbcSource" : {
-			"url":"jdbc:goldilocks://192.168.0.119:30009/",
+			"url":"jdbc:goldilocks://localhost:30009/",
 			"dbName": "gop",
 			"driverClass":"sunje.goldilocks.jdbc.GoldilocksDriver",
 			"jdbcProperties":[

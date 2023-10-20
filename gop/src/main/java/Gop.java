@@ -162,26 +162,56 @@ public class Gop {
 		}
 		Set<LocalDateTime> timeKeys = rangeTimeMap.keySet();
 		int i = 0;
+
+		Data sumDt = null;
 		for (LocalDateTime key : timeKeys) {
 			// System.out.println(key);
+
 			if (head > 0) {
 				if (i < head) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
 					printTable(data);
+					sumDt=sumData(sumDt,data);
 					// System.out.println("head: " +i);
 				}
 			} else if (tail > 0) {
 				if (timeKeys.size() - tail <= i) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
 					printTable(data);
+					sumDt=sumData(sumDt,data);
 					// System.out.println("tail: " +i);
 				}
 			} else {
 				Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
 				printTable(data);
+				sumDt=sumData(sumDt,data);
 			}
 			i++;
 		}
+		printTable(sumDt);
+		printTable(avgData(sumDt,timeKeys.size()));
+	}
+
+	private static Data avgData(Data sumDt, int size) {
+		sumDt.time = "AVG:                     ";
+		
+		for (ResultCommon rc : sumDt.rc) {
+			rc.value = rc.value/size;
+		}
+
+		return sumDt;
+	}
+
+	private static Data sumData(Data sumDt, Data data) {
+		if(sumDt == null){
+			sumDt = data;
+			sumDt.time = "SUM:                     ";
+		}else{
+		   for (int i = 0; i < data.rc.length; i++) {
+			sumDt.rc[i].value += data.rc[i].value;
+		   }
+		}
+		return sumDt;
 	}
 
 	private static LocalDateTime stringToDate(String startSearchKey) {
