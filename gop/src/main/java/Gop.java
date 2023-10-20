@@ -122,7 +122,7 @@ public class Gop {
 		return sdf.format(c1.getTime());
 	}
 
-	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap, int head, int tail, Boolean printType) {
+	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap, int head, int tail, Boolean printCSV) {
 		if (rangeTimeMap.isEmpty()) {
 			System.out.println("no data!");
 			System.exit(0);
@@ -137,26 +137,26 @@ public class Gop {
 			if (head > 0) {
 				if (i < head) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-					printTable(data,false,printType);
+					printTable(data,false,printCSV);
 					sumDt=sumData(sumDt,data);
 					// System.out.println("head: " +i);
 				}
 			} else if (tail > 0) {
 				if (timeKeys.size() - tail <= i) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-					printTable(data,false,printType);
+					printTable(data,false,printCSV);
 					sumDt=sumData(sumDt,data);
 					// System.out.println("tail: " +i);
 				}
 			} else {
 				Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-				printTable(data,false,printType);
+				printTable(data,false,printCSV);
 				sumDt=sumData(sumDt,data);
 			}
 			i++;
 		}
-		printTable(sumDt,true,printType);
-		printTable(avgData(sumDt,timeKeys.size()),false,printType);
+		printTable(sumDt,true,printCSV);
+		printTable(avgData(sumDt,timeKeys.size()),false,printCSV);
 	}
 
 	private static Data avgData(Data sumDt, int size) {
