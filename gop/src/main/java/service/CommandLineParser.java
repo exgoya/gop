@@ -69,4 +69,27 @@ public class CommandLineParser {
 			}
 		}
 	}
+
+    public void printHelp() {
+		System.out.println(" ---");
+		System.out.println(" -config <config file path> [ -demon | -client -log <log file path> <option> ]");
+		System.out.println(" ");
+		System.out.println(" client option:");
+		System.out.println(
+				"   -log <log file path> [ -time 'yyyy-mm-dd hh24:mi:ss.fff' 'yyyy-mm-dd hh24:mi:ss.fff' | -name <column name> | -tag <tag name> ]");
+		System.out.println("			[ -head | -tail <print count> ]  ");
+		System.out.println(" ");
+		System.out.println(" ---");
+		System.out.println(" sample use");
+		System.out.println(" java -Xmx100M -jar gop.jar -config resource/config.json -demon  ");
+		System.out.println(
+				" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -time '2022-12-01 03:14:40.000' '2022-12-01 03:15:00.000'");
+		System.out.println(
+				" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -name execute -tail 10");
+		System.out.println(
+				" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -tag tag1 -head 10");
+		System.out
+				.println(" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json");
+		System.out.println(" ");
+    }
 }

@@ -16,7 +16,7 @@
 		"consolePrint": true,
 		"pageSize": "10",
 		"retention": "2",
-		"printType":"ansi",
+		"printCSV": false,
 		"fileLog" : {
 			"enable":true,
 			"logPath": "data/"

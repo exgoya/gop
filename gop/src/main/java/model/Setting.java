@@ -7,12 +7,12 @@ public class Setting {
 
 	public JdbcSource jdbcSource;
 	public int timeInterval;
-	public String retention; // ansi or csv
+	public String retention;
 	public boolean consolePrint;
 	public int pageSize;
 	public FileLog fileLog;
 	public Stacker stacker;
-	public String type; // ansi or csv
+	public Boolean printCSV; // ansi or csv
 
 	@Override
 	public String toString() {

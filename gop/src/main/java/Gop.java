@@ -44,33 +44,14 @@ public class Gop {
 
 		boolean help = clp.getFlag("help");
 		if (help) {
-			System.out.println(" ---");
-			System.out.println(" -config <config file path> [ -demon | -client -log <log file path> <option> ]");
-			System.out.println(" ");
-			System.out.println(" client option:");
-			System.out.println(
-					"   -log <log file path> [ -time 'yyyy-mm-dd hh24:mi:ss.fff' 'yyyy-mm-dd hh24:mi:ss.fff' | -name <column name> | -tag <tag name> ]");
-			System.out.println("			[ -head | -tail <print count> ]  ");
-			System.out.println(" ");
-			System.out.println(" ---");
-			System.out.println(" sample use");
-			System.out.println(" java -Xmx100M -jar gop.jar -config resource/config.json -demon  ");
-			System.out.println(
-					" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -time '2022-12-01 03:14:40.000' '2022-12-01 03:15:00.000'");
-			System.out.println(
-					" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -name execute -tail 10");
-			System.out.println(
-					" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -tag tag1 -head 10");
-			System.out
-					.println(" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json");
-			System.out.println(" ");
-
+			clp.printHelp();
 			System.exit(0);
 		}
 		if (args.length < 2) {
 			System.out.println("invalid argument args : " + args.length);
 			System.exit(0);
 		}
+
 		boolean client = clp.getFlag("client");
 		boolean demon = clp.getFlag("demon");
 		String configFile = clp.getArgumentValue("config")[0];
@@ -92,7 +73,6 @@ public class Gop {
 			CRetention cr = new CRetention(config.setting.fileLog.logPath);
 			cr.go(config.setting.retention);
 			gStampLog(config, gson);
-			
 		} else if (client) {
 			ReadLog rl = new ReadLog(new File(log), gson, config);
 
@@ -100,17 +80,17 @@ public class Gop {
 				LocalDateTime stTs = stringToDate(time1);
 				LocalDateTime edTs = stringToDate(time2);
 				rl.setRangeTimeMap(stTs, edTs);
-				printTableMap(rl.rangeTimeMap, head, tail);
+				printTableMap(rl.rangeTimeMap, head, tail,config.setting.printCSV);
 			} else if (nameArg != null) {
 				String name = nameArg;
 				rl.setNameMap(name);
-				printTableMap(rl.nameMap, head, tail);
+				printTableMap(rl.nameMap, head, tail,config.setting.printCSV);
 			} else if (tagArg != null) {
 				String tag = tagArg;
 				rl.setTagMap(tag);
-				printTableMap(rl.tagMap, head, tail);
+				printTableMap(rl.tagMap, head, tail,config.setting.printCSV);
 			} else {
-				printTableMap(rl.timeMap, head, tail);
+				printTableMap(rl.timeMap, head, tail,config.setting.printCSV);
 			}
 		} else {
 			System.out.println("invalid argument");
@@ -142,7 +122,7 @@ public class Gop {
 		return sdf.format(c1.getTime());
 	}
 
-	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap, int head, int tail) {
+	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap, int head, int tail, Boolean printType) {
 		if (rangeTimeMap.isEmpty()) {
 			System.out.println("no data!");
 			System.exit(0);
@@ -157,26 +137,26 @@ public class Gop {
 			if (head > 0) {
 				if (i < head) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-					printTable(data,false);
+					printTable(data,false,printType);
 					sumDt=sumData(sumDt,data);
 					// System.out.println("head: " +i);
 				}
 			} else if (tail > 0) {
 				if (timeKeys.size() - tail <= i) {
 					Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-					printTable(data,false);
+					printTable(data,false,printType);
 					sumDt=sumData(sumDt,data);
 					// System.out.println("tail: " +i);
 				}
 			} else {
 				Data data = new Data(timestampToString(key), rangeTimeMap.get(key));
-				printTable(data,false);
+				printTable(data,false,printType);
 				sumDt=sumData(sumDt,data);
 			}
 			i++;
 		}
-		printTable(sumDt,true);
-		printTable(avgData(sumDt,timeKeys.size()),false);
+		printTable(sumDt,true,printType);
+		printTable(avgData(sumDt,timeKeys.size()),false,printType);
 	}
 
 	private static Data avgData(Data sumDt, int size) {
@@ -267,7 +247,7 @@ public class Gop {
 
 				// print console (table)
 				if (config.setting.consolePrint) {
-					gColumn = printTable(calData,gColumn);
+					gColumn = printTable(calData,gColumn,config.setting.printCSV);
 					printRow++;
 					if (printRow % config.setting.pageSize == 0) {
 						gColumn = true;
@@ -381,7 +361,7 @@ public class Gop {
 	}
 
 
-	private static Boolean printTable(Data data,Boolean gColumn) {
+	private static Boolean printTable(Data data,Boolean gColumn,Boolean printCSV) {
 		// TODO Auto-generated method stub
 		String[] column = new String[data.rc.length];
 		String[] row = new String[data.rc.length];
@@ -389,7 +369,11 @@ public class Gop {
 		for (int i = 0; i < data.rc.length; i++) {
 			if (data.rc[i] != null) {
 				column[i] = data.rc[i].measure;
-				row[i] = alertFormat(data.rc[i].value, data.rc[i].alert);
+				if(!printCSV){
+					row[i] = alertFormat(data.rc[i].value, data.rc[i].alert);
+				}else{
+					row[i] = (","+data.rc[i].value);
+				}
 				// System.out.println(rc[i].toString());
 			}
 		}
@@ -399,12 +383,26 @@ public class Gop {
 			// System.out.println("** instance name :" + gName);
 
 			System.out.println("");
-			System.out.format("%34s", ANSI_GREEN + "time" + ANSI_RESET);
-			for (i = 0; i < row.length; i++) {
-				if (column[i] != null) {
-					System.out.format("%23s", ANSI_GREEN + column[i] + ANSI_RESET);
+			if(!printCSV){
+				System.out.format("%34s", ANSI_GREEN + "time" + ANSI_RESET);
+				for (i = 0; i < row.length; i++) {
+					if(column[i] != null) {
+						System.out.format("%23s", ANSI_GREEN + column[i] + ANSI_RESET);
+					}
 				}
+			}else{
+				System.out.format("time");
+					for (i = 0; i < row.length; i++) {
+						if(printCSV){
+							System.out.print(","+column[i]);
+						}else{
+							if(column[i] != null) {
+								System.out.format("%23s", ANSI_GREEN + column[i] + ANSI_RESET);
+							}	
+						}
+					}
 			}
+			
 			System.out.format("%n");
 			gColumn = false;
 		}
@@ -412,14 +410,22 @@ public class Gop {
 		for (i = 0; i < data.rc.length; i++) {
 			if (data.rc[i] != null) {
 				// System.out.println(rc[i].toString());
-				System.out.format("%22s", ANSI_GREEN + data.time + ANSI_RESET);
+				if(!printCSV){
+					System.out.format("%22s", ANSI_GREEN + data.time + ANSI_RESET);
+				}else{
+					System.out.format(data.time);
+				}
 				break;
 			}
 		}
 
 		for (i = 0; i < row.length; i++) {
 			if (row[i] != null) {
-				System.out.format("%23s", row[i]);
+				if(!printCSV){
+					System.out.format("%23s", row[i]);
+				}else{
+					System.out.format(row[i]);
+				}
 			}
 		}
 		System.out.format("%n");
