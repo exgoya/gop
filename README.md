@@ -129,17 +129,16 @@ config 명세
 
 ~~~
 
-host : 모니터링 서버 환경 정보  
-	name : String - DB 이름을 명시한다 ( ex. g1n1 , g2n1 )  
-	ip : String - DB IP  
-	port : int - DB PORT  
-	user : String - DB USERNAME  
-	password : String - DB password  
-	timeInterval : int - monitoring time interval  
-	print : boolean - print monitoring log  
-	pagesize : int - print column header between row  
+setting : 설정
+	jdbcSource : DB 접속 정보 
+	timeInterval : monitoring time interval  
+	consolePrint : print monitoring log  
+	pagesize : print column header between row  
+	retention : delete log
+	printCSV : print csv
+	failLog : write log file
 	
-common  
+measure  
 	name : String - monitoring column name  
 	tag : String - monitoring tag name  
 	diff : boolean - diff before values  
@@ -172,7 +171,8 @@ config sample
 		"timeInterval": 1000,
 		"consolePrint": true,
 		"pageSize": "10",
-		"printType":"ansi",
+		"retention": "2",
+		"printCSV": false,
 		"fileLog" : {
 			"enable":true,
 			"logPath": "data/"
