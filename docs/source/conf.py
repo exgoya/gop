@@ -26,3 +26,8 @@ language = 'ko'
 
 html_theme = 'furo'
 html_static_path = ['_static']
+
+html_baseurl = 'https://exgoya.github.io/gop/
+exetensions = [
+	'sphinx.ext.githubpages',
+]
