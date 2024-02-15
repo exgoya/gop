@@ -3,6 +3,7 @@
 
 # Ignore Gradle build output directory
 build
+!docs/build
 
 log_*.json
 alert_*.json
