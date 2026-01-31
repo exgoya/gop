@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/gop/config.schema.json",
+  "title": "gop config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["setting"],
+  "oneOf": [
+    { "required": ["measure"] },
+    { "required": ["sources"] }
+  ],
+  "properties": {
+    "setting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "jdbcSource",
+        "timeInterval",
+        "consolePrint",
+        "pageSize",
+        "retention",
+        "printCSV",
+        "fileLog"
+      ],
+      "properties": {
+        "jdbcSource": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "dbName", "driverClass", "jdbcProperties"],
+          "properties": {
+            "url": { "type": "string", "minLength": 1 },
+            "dbName": { "type": "string", "minLength": 1 },
+            "driverClass": { "type": "string", "minLength": 1 },
+            "jdbcProperties": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "value"],
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "value": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "source": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9._-]+$" },
+        "configId": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9._-]+$", "description": "optional; defaults to config filename (without extension)" },
+        "timeInterval": { "type": "integer", "minimum": 1 },
+        "consolePrint": { "type": "boolean" },
+        "pageSize": { "type": ["integer", "string"] },
+        "retention": { "type": ["integer", "string"] },
+        "printCSV": { "type": "boolean" },
+        "fileLog": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enable", "logPath"],
+          "properties": {
+            "enable": { "type": "boolean" },
+            "logPath": { "type": "string", "minLength": 1 },
+            "maxBytes": { "type": "integer", "minimum": 1 },
+            "maxBackups": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "api": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enable"],
+          "properties": {
+            "enable": { "type": "boolean" },
+            "port": { "type": "integer", "minimum": 1 },
+            "threadPoolSize": { "type": "integer", "minimum": 1 },
+            "logPath": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "measure": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "sql"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "tag": { "type": "string" },
+          "diff": { "type": "boolean" },
+          "alertValue": { "type": "integer" },
+          "alertPolicy": { "type": "integer", "enum": [0, 1, 2, 3] },
+          "alertSql": { "type": "string" },
+          "sql": { "type": "string", "minLength": 1 },
+          "sqlIsOs": { "type": "boolean" },
+          "alertScript": { "type": "string" },
+          "alertScriptIsOs": { "type": "boolean" }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "jdbcSource", "measure"],
+        "properties": {
+        "source": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9._-]+$" },
+          "jdbcSource": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "dbName", "driverClass", "jdbcProperties"],
+            "properties": {
+              "url": { "type": "string", "minLength": 1 },
+              "dbName": { "type": "string", "minLength": 1 },
+              "driverClass": { "type": "string", "minLength": 1 },
+              "jdbcProperties": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "value"],
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "value": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "measure": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "sql"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "tag": { "type": "string" },
+                "diff": { "type": "boolean" },
+                "alertValue": { "type": "integer" },
+                "alertPolicy": { "type": "integer", "enum": [0, 1, 2, 3] },
+                "alertSql": { "type": "string" },
+                "sql": { "type": "string", "minLength": 1 },
+                "sqlIsOs": { "type": "boolean" },
+                "alertScript": { "type": "string" },
+                "alertScriptIsOs": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

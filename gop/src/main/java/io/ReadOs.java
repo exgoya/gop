@@ -1,4 +1,4 @@
-package service;
+package io;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReadOs {
-	int execute(String cmd) {
+	public int execute(String cmd) {
 		return Integer.parseInt(runS(cmd));
 	}
 

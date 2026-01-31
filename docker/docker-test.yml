@@ -1,0 +1,47 @@
+name: gop-test-db
+
+services:
+  mysql:
+    image: mysql/mysql-server:8.0
+    platform: linux/arm64/v8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gop
+      MYSQL_USER: gop
+      MYSQL_PASSWORD: gop
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-ugop", "-pgop"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: gop
+      MARIADB_USER: gop
+      MARIADB_PASSWORD: gop
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-ugop", "-pgop"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: gop
+      POSTGRES_USER: gop
+      POSTGRES_PASSWORD: gop
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gop -d gop"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

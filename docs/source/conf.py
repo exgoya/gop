@@ -14,20 +14,20 @@ release = '1.0.0'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = [
+    'sphinx.ext.githubpages',
+]
 
 templates_path = ['_templates']
 exclude_patterns = []
 
-language = 'ko'
+language = 'en'
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'furo'
 html_static_path = ['_static']
+html_logo = '_static/logo.svg'
 
-html_baseurl = 'https://exgoya.github.io/gop/
-exetensions = [
-	'sphinx.ext.githubpages',
-]
+html_baseurl = 'https://exgoya.github.io/gop/'

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="64" viewBox="0 0 220 64" role="img" aria-label="gop">
+  <style>
+    .logo-text { fill: #4B5320; }
+  </style>
+  <rect width="220" height="64" fill="none"/>
+  <text x="8" y="44" class="logo-text" font-family="Fira Sans, Segoe UI, Arial, sans-serif" font-size="40" font-weight="700">GOP</text>
+</svg>

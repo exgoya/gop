@@ -1,4 +1,4 @@
-package service;
+package io;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,21 +36,10 @@ public class ReadLog {
 
 		String line = "";
 
-		int i = 0;
-		ResultCommon[] rc = new ResultCommon[config.measure.length];
-
 		while ((line = reader.readLine()) != null) {
 			Data obj = gson.fromJson(line, Data.class);
 			LocalDateTime ts = stringToTimestamp(obj.time, gson);
-			// if (i >= config.common.length) {
-			if (i >= config.measure.length) {
-				rc = new ResultCommon[config.measure.length];
-				i = 0;
-			}
-			// rc[i] = obj.rc[i];
-			rc = obj.rc;
-			timeMap.put(ts, rc);
-			i++;
+			timeMap.put(ts, obj.rc);
 		}
 	}
 
@@ -67,11 +56,15 @@ public class ReadLog {
 	}
 
 	private LocalDateTime stringToTimestamp(String timestamp, Gson gson) {
-		// TODO Auto-generated method stub
-		String tempTime = gson.fromJson(timestamp, String.class);
+		String tempTime = timestamp;
+		if (tempTime == null) {
+			return null;
+		}
+		if (tempTime.length() >= 2 && tempTime.startsWith("\"") && tempTime.endsWith("\"")) {
+			tempTime = tempTime.substring(1, tempTime.length() - 1);
+		}
 		DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
-		LocalDateTime localDateTime = LocalDateTime.from(formatDateTime.parse(tempTime));
-		return localDateTime;
+		return LocalDateTime.from(formatDateTime.parse(tempTime));
 	}
 
 	public void setRangeTimeMap(LocalDateTime stTs, LocalDateTime edTs) {

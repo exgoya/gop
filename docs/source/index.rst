@@ -1,20 +1,23 @@
-.. gop documentation master file, created by
-   sphinx-quickstart on Thu Feb 15 11:15:45 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Gop Documentation
+=================
 
-Welcome to gop's documentation!
-===============================
+gop is a console tool for database monitoring.
+
+Features
+--------
+
+- Query trends
+- System resource metrics
+- Alert actions via scripts
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Contents
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   quickstart
+   install
+   commands
+   config
+   api
+   packaging
+   development

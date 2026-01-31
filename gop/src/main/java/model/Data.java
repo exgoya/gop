@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 
 public class Data {
 	public String time;
+	public String source;
 	public ResultCommon rc[];
 
 	public Data(String time, ResultCommon[] resultCommons) {
@@ -13,9 +14,17 @@ public class Data {
 		this.rc = resultCommons;
 	}
 
+	public Data(String time, String source, ResultCommon[] resultCommons) {
+		super();
+		this.time = time;
+		this.source = source;
+		this.rc = resultCommons;
+	}
+
 	public Data(Data data) {
 		// TODO Auto-generated constructor stub
 		this.time = data.time;
+		this.source = data.source;
 		ResultCommon[] rc = data.rc.clone();
 		// new ResultCommon[data.rc.length];
 
@@ -35,6 +44,14 @@ public class Data {
 
 	public void setTime(String time) {
 		this.time = time;
+	}
+
+	public String getSource() {
+		return source;
+	}
+
+	public void setSource(String source) {
+		this.source = source;
 	}
 
 	public ResultCommon[] getRc() {

@@ -1,0 +1,13 @@
+[Unit]
+Description=gop monitoring daemon
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/gop
+ExecStart=/opt/gop/gop server -config /opt/gop/config.json
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

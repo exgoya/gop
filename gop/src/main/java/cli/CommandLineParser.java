@@ -1,4 +1,4 @@
-package service;
+package cli;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,26 +70,34 @@ public class CommandLineParser {
 		}
 	}
 
-    public void printHelp() {
+	public static void printHelp() {
 		System.out.println(" ---");
-		System.out.println(" -config <config file path> [ -demon | -client -log <log file path> <option> ]");
+		System.out.println(" gop <server|run|watch> -config <config file path> [options]");
+		System.out.println(" gop version | gop -version");
 		System.out.println(" ");
-		System.out.println(" client option:");
+		System.out.println(" run option:");
+		System.out.println("   -interval <sec>   (default unit)");
+		System.out.println("   -interval-ms <ms>");
+		System.out.println("   * run mode is continuous (Ctrl+C to stop)");
+		System.out.println(" ");
+		System.out.println(" watch option:");
 		System.out.println(
 				"   -log <log file path> [ -time 'yyyy-mm-dd hh24:mi:ss.fff' 'yyyy-mm-dd hh24:mi:ss.fff' | -name <column name> | -tag <tag name> ]");
 		System.out.println("			[ -head | -tail <print count> ]  ");
+		System.out.println("   * watch requires -log");
 		System.out.println(" ");
 		System.out.println(" ---");
 		System.out.println(" sample use");
-		System.out.println(" java -Xmx100M -jar gop.jar -config resource/config.json -demon  ");
+		System.out.println(" gop server -config resource/config.json");
+		System.out.println(" gop run -config resource/config.json");
 		System.out.println(
-				" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -time '2022-12-01 03:14:40.000' '2022-12-01 03:15:00.000'");
+				" gop watch -config resource/config.json -log resource/log_20221201.json -time '2022-12-01 03:14:40.000' '2022-12-01 03:15:00.000'");
 		System.out.println(
-				" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -name execute -tail 10");
+				" gop watch -config resource/config.json -log resource/log_20221201.json -name execute -tail 10");
 		System.out.println(
-				" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -tag tag1 -head 10");
+				" gop watch -config resource/config.json -log resource/log_20221201.json -tag tag1 -head 10");
 		System.out
-				.println(" java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json");
+				.println(" gop watch -config resource/config.json -log resource/log_20221201.json");
 		System.out.println(" ");
     }
 }

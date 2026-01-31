@@ -36,17 +36,31 @@ dependencies {
 
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.6'
     implementation 'com.google.code.gson:gson:2.13.2'
+    implementation 'com.mysql:mysql-connector-j:9.6.0'
+    implementation 'org.postgresql:postgresql:42.7.9'
+    implementation 'org.mariadb.jdbc:mariadb-java-client:3.5.7'
     implementation fileTree(dir: 'lib', include: '*.jar')
 }
 
 application {
     // Define the main class for the application.
-    mainClass = 'Gop'
+    mainClass = 'app.Gop'
 }
 
 tasks.named('shadowJar') {
     archiveClassifier = 'all'
 }
+
+tasks.withType(Jar).configureEach {
+    manifest {
+        attributes(
+            'Implementation-Title': 'gop',
+            'Implementation-Version': project.version.toString()
+        )
+    }
+}
+
+def shadowJarFileName = tasks.named('shadowJar').get().archiveFileName.get()
 
 def jpackageExecutable = {
     javaToolchains.launcherFor {
@@ -59,6 +73,10 @@ tasks.register('jpackageAppImage', Exec) {
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
     doFirst {
         outputDir.mkdirs()
+        def appImage = new File(outputDir, "gop.app")
+        if (appImage.exists()) {
+            appImage.deleteDir()
+        }
     }
     commandLine(
         jpackageExecutable(),
@@ -66,7 +84,7 @@ tasks.register('jpackageAppImage', Exec) {
         '--input', layout.buildDirectory.dir("libs").get().asFile.absolutePath,
         '--dest', outputDir.absolutePath,
         '--name', 'gop',
-        '--main-jar', 'gop-all.jar',
+        '--main-jar', shadowJarFileName,
         '--main-class', application.mainClass.get()
     )
 }
@@ -78,7 +96,7 @@ def jpackageCommand = { String type, File outputDir ->
         '--input', layout.buildDirectory.dir("libs").get().asFile.absolutePath,
         '--dest', outputDir.absolutePath,
         '--name', 'gop',
-        '--main-jar', 'gop-all.jar',
+        '--main-jar', shadowJarFileName,
         '--main-class', application.mainClass.get(),
         '--vendor', 'exgoya',
         '--app-version', project.version.toString(),

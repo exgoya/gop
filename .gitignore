@@ -12,10 +12,13 @@
 # Outputs / binaries
 *.class
 gop/bin/
+gop/build/
+**/jpackage/
 
 # Logs / data
 data/
 *.log
 log_*.json
 alert_*.json
+docs/build/
 package-lock.json

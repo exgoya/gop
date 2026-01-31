@@ -1,34 +1,40 @@
-package service;
+package db;
 
 import java.sql.*;
 import java.util.Properties;
 
-import com.google.gson.GsonBuilder;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-import model.Measure;
-import model.Config;
 import model.Data;
 import model.JdbcProperty;
+import model.JdbcSource;
 import model.ResultCommon;
+import model.Measure;
+import io.ReadOs;
 
 public class Database {
-	Config sConfig;
+	JdbcSource jdbcSource;
+	Measure[] measure;
+	String source;
 
-	public Database(Config config) {
-		sConfig = config;
+	public Database(JdbcSource jdbcSource, Measure[] measure, String source) {
+		this.jdbcSource = jdbcSource;
+		this.measure = measure;
+		this.source = source;
 	}
 
 	public Connection createConnection()
     {
         try
         {
-            Class.forName(sConfig.setting.jdbcSource.driverClass);
+            Class.forName(jdbcSource.driverClass);
         }
         catch (ClassNotFoundException sException)
         {
         }
 		Properties prop = new Properties();
-		JdbcProperty jpArr[] = sConfig.setting.jdbcSource.jdbcProperties;
+		JdbcProperty jpArr[] = jdbcSource.jdbcProperties;
 
 		for (JdbcProperty jdbcProperty : jpArr) {
 			prop.setProperty(jdbcProperty.name, jdbcProperty.value);
@@ -36,7 +42,7 @@ public class Database {
 		boolean createConnection = true;
 		int i = 0;
 
-		String dbUrl=sConfig.setting.jdbcSource.url+sConfig.setting.jdbcSource.dbName;
+		String dbUrl=jdbcSource.url + jdbcSource.dbName;
 		while (createConnection) {
 			try {	
 				return DriverManager.getConnection(dbUrl, prop);
@@ -61,11 +67,11 @@ public class Database {
 
 		do {
 			con = db.createConnection();
-			arrPstmt = new PreparedStatement[sConfig.measure.length];
-			for (int i = 0; i < sConfig.measure.length; i++) {
-				if (!sConfig.measure[i].sqlIsOs) {
+			arrPstmt = new PreparedStatement[measure.length];
+			for (int i = 0; i < measure.length; i++) {
+				if (!measure[i].sqlIsOs) {
 					try {
-						arrPstmt[i] = con.prepareStatement(sConfig.measure[i].sql);
+						arrPstmt[i] = con.prepareStatement(measure[i].sql);
 					} catch (SQLException e) {
 						// TODO Auto-generated catch block
 						// e.printStackTrace();
@@ -86,26 +92,63 @@ public class Database {
 		return arrPstmt;
 	}
 
+	public static class ConnAndStmt {
+		public Connection con;
+		public PreparedStatement[] stmts;
+
+		ConnAndStmt(Connection con, PreparedStatement[] stmts) {
+			this.con = con;
+			this.stmts = stmts;
+		}
+	}
+
+	public ConnAndStmt createConAndPstmtWithConnection() {
+		Connection con;
+		PreparedStatement[] arrPstmt;
+		do {
+			con = createConnection();
+			arrPstmt = new PreparedStatement[measure.length];
+			for (int i = 0; i < measure.length; i++) {
+				if (!measure[i].sqlIsOs) {
+					try {
+						arrPstmt[i] = con.prepareStatement(measure[i].sql);
+					} catch (SQLException e) {
+						System.out.println("con.prepareStatement error");
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e1) {
+							System.out.println("[SQLSTATE:"+ e.getSQLState() + "] MSG : "+e.getMessage());
+						}
+					}
+				}
+			}
+			if (arrPstmt != null) {
+				return new ConnAndStmt(con, arrPstmt);
+			}
+		} while (arrPstmt == null);
+		return new ConnAndStmt(con, arrPstmt);
+	}
+
 	public Data getCommonQuery(PreparedStatement[] arrPstmt) {
 
-		ResultCommon[] resultArr = new ResultCommon[sConfig.measure.length];
+		ResultCommon[] resultArr = new ResultCommon[measure.length];
 
-		String sysTimestamp = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss.SSS").create()
-				.toJson(new Timestamp(System.currentTimeMillis()));
+		DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+		String sysTimestamp = formatDateTime.format(LocalDateTime.now());
 
-		for (int i = 0; i < sConfig.measure.length; i++) {
+		for (int i = 0; i < measure.length; i++) {
 
 			// Statement stmt = con.createStatement();
 			boolean alert = false;
-			if (sConfig.measure[i].sqlIsOs) {
+			if (measure[i].sqlIsOs) {
 				long queryValue = 0;
 
 				ReadOs oc = new ReadOs();
-				queryValue = oc.execute(sConfig.measure[i].sql);
+				queryValue = oc.execute(measure[i].sql);
 
-				alert = alertCheck(sConfig.measure[i], queryValue);
+				alert = alertCheck(measure[i], queryValue);
 
-				resultArr[i] = new ResultCommon(sConfig.measure[i].name, queryValue, sConfig.measure[i].tag, alert);
+				resultArr[i] = new ResultCommon(measure[i].name, queryValue, measure[i].tag, alert);
 
 			} else {
 				ResultSet rs;
@@ -116,15 +159,15 @@ public class Database {
 					ResultSetMetaData rsMeta = rs.getMetaData();
 					if (rsMeta.getColumnCount() != 1) {
 						System.out
-								.println("not support multiple column query _ Query name : " + sConfig.measure[i].name);
+								.println("not support multiple column query _ Query name : " + measure[i].name);
 					}
 
 					long queryValue = 0;
 					while (rs.next()) {
 						queryValue = rs.getLong(1);
-						alert = alertCheck(sConfig.measure[i], queryValue);
+						alert = alertCheck(measure[i], queryValue);
 
-						resultArr[i] = new ResultCommon(sConfig.measure[i].name, queryValue, sConfig.measure[i].tag,
+						resultArr[i] = new ResultCommon(measure[i].name, queryValue, measure[i].tag,
 								alert);
 					}
 					rs.close();
@@ -137,7 +180,7 @@ public class Database {
 				}
 			}
 		}
-		return new Data(sysTimestamp, resultArr);
+		return new Data(sysTimestamp, source, resultArr);
 	}
 
 	private boolean alertCheck(Measure common, long queryValue) {

@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 public class Config {
 	public Setting setting;
 	public Measure[] measure;
+	public SourceConfig[] sources;
 
 	public Config(Setting setting, Measure[] measure) {
 		super();
