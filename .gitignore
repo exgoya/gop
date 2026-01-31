@@ -1,13 +1,21 @@
-# Ignore Gradle project-specific cache directory
+# Gradle
 .gradle
+**/build/
 
-# Ignore Gradle build output directory
-build
-!docs/build
+# OS / IDE
+.DS_Store
+**/.DS_Store
+.vscode/
+.idea/
+*.iml
 
+# Outputs / binaries
+*.class
+gop/bin/
+
+# Logs / data
+data/
+*.log
 log_*.json
 alert_*.json
 package-lock.json
-.DS_Store
-gop/.DS_Store
-*.class

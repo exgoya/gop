@@ -1,0 +1,125 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Ensure gradlew is executable
+        if: runner.os != 'Windows'
+        run: chmod +x ./gradlew
+
+      - name: Install Linux packaging deps
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Install WiX (Windows)
+        if: runner.os == 'Windows'
+        run: choco install wix -y
+
+      - name: Build packages (macOS)
+        if: runner.os == 'macOS'
+        run: ./gradlew shadowDistZip jpackageMac
+
+      - name: Prepare artifacts (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p artifacts
+          cp gop/build/distributions/gop-shadow.zip "artifacts/gop-${VERSION}-macos-shadow.zip"
+          cp gop/build/libs/gop-all.jar "artifacts/gop-${VERSION}-macos-all.jar"
+          cp gop/build/jpackage/*.dmg "artifacts/gop-${VERSION}-macos.dmg"
+          cp gop/build/jpackage/*.pkg "artifacts/gop-${VERSION}-macos.pkg"
+
+      - name: Build packages (Linux)
+        if: runner.os == 'Linux'
+        run: ./gradlew shadowDistZip jpackageLinux
+
+      - name: Prepare artifacts (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p artifacts
+          cp gop/build/distributions/gop-shadow.zip "artifacts/gop-${VERSION}-linux-shadow.zip"
+          cp gop/build/libs/gop-all.jar "artifacts/gop-${VERSION}-linux-all.jar"
+          cp gop/build/jpackage/*.deb "artifacts/gop-${VERSION}-linux.deb"
+          cp gop/build/jpackage/*.rpm "artifacts/gop-${VERSION}-linux.rpm"
+
+      - name: Build packages (Windows)
+        if: runner.os == 'Windows'
+        run: .\gradlew.bat shadowDistZip jpackageWindows
+
+      - name: Prepare artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME.Substring(1)
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          Copy-Item gop\\build\\distributions\\gop-shadow.zip "artifacts\\gop-$version-windows-shadow.zip"
+          Copy-Item gop\\build\\libs\\gop-all.jar "artifacts\\gop-$version-windows-all.jar"
+          Copy-Item gop\\build\\jpackage\\*.msi "artifacts\\gop-$version-windows.msi"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gop-${{ matrix.os }}
+          path: |
+            artifacts/**
+
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/gop-*-shadow.zip
+            dist/**/gop-*-all.jar
+            dist/**/*.dmg
+            dist/**/*.pkg
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.msi
+          generate_release_notes: true

@@ -9,7 +9,16 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'com.gradleup.shadow' version '9.3.1'
 }
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+version = '1.0.0'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -18,19 +27,138 @@ repositories {
 
 dependencies {
     // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
+    testImplementation platform('org.junit:junit-bom:5.14.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // This dependency is used by the application.
     // implementation'com.google.guava:guava:30.1.1-jre'
 
-    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.6'
+    implementation 'com.google.code.gson:gson:2.13.2'
     implementation fileTree(dir: 'lib', include: '*.jar')
 }
 
 application {
     // Define the main class for the application.
     mainClass = 'Gop'
+}
+
+tasks.named('shadowJar') {
+    archiveClassifier = 'all'
+}
+
+def jpackageExecutable = {
+    javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }.get().metadata.installationPath.file("bin/jpackage").asFile
+}
+
+tasks.register('jpackageAppImage', Exec) {
+    dependsOn 'shadowJar'
+    def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    doFirst {
+        outputDir.mkdirs()
+    }
+    commandLine(
+        jpackageExecutable(),
+        '--type', 'app-image',
+        '--input', layout.buildDirectory.dir("libs").get().asFile.absolutePath,
+        '--dest', outputDir.absolutePath,
+        '--name', 'gop',
+        '--main-jar', 'gop-all.jar',
+        '--main-class', application.mainClass.get()
+    )
+}
+
+def jpackageCommand = { String type, File outputDir ->
+    [
+        jpackageExecutable(),
+        '--type', type,
+        '--input', layout.buildDirectory.dir("libs").get().asFile.absolutePath,
+        '--dest', outputDir.absolutePath,
+        '--name', 'gop',
+        '--main-jar', 'gop-all.jar',
+        '--main-class', application.mainClass.get(),
+        '--vendor', 'exgoya',
+        '--app-version', project.version.toString(),
+        '--description', 'Database monitoring console tool',
+        '--linux-app-category', 'Development;System;',
+        '--mac-app-category', 'public.app-category.developer-tools',
+        '--mac-package-identifier', 'com.exgoya.gop'
+    ]
+}
+
+def requireOs = { String label, boolean ok ->
+    if (!ok) {
+        throw new GradleException("jpackage '${label}' must be run on the target OS.")
+    }
+}
+
+tasks.register('jpackageDmg', Exec) {
+    dependsOn 'shadowJar'
+    def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    doFirst {
+        outputDir.mkdirs()
+        requireOs('dmg', org.gradle.internal.os.OperatingSystem.current().isMacOsX())
+    }
+    commandLine(jpackageCommand('dmg', outputDir))
+}
+
+tasks.register('jpackagePkg', Exec) {
+    dependsOn 'shadowJar'
+    def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    doFirst {
+        outputDir.mkdirs()
+        requireOs('pkg', org.gradle.internal.os.OperatingSystem.current().isMacOsX())
+    }
+    commandLine(jpackageCommand('pkg', outputDir))
+}
+
+tasks.register('jpackageDeb', Exec) {
+    dependsOn 'shadowJar'
+    def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    doFirst {
+        outputDir.mkdirs()
+        requireOs('deb', org.gradle.internal.os.OperatingSystem.current().isLinux())
+    }
+    commandLine(jpackageCommand('deb', outputDir))
+}
+
+tasks.register('jpackageRpm', Exec) {
+    dependsOn 'shadowJar'
+    def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    doFirst {
+        outputDir.mkdirs()
+        requireOs('rpm', org.gradle.internal.os.OperatingSystem.current().isLinux())
+    }
+    commandLine(jpackageCommand('rpm', outputDir))
+}
+
+tasks.register('jpackageMsi', Exec) {
+    dependsOn 'shadowJar'
+    def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    doFirst {
+        outputDir.mkdirs()
+        requireOs('msi', org.gradle.internal.os.OperatingSystem.current().isWindows())
+    }
+    commandLine(jpackageCommand('msi', outputDir))
+}
+
+tasks.register('jpackageWindows') {
+    dependsOn 'jpackageMsi'
+}
+
+tasks.register('jpackageMac') {
+    dependsOn 'jpackageDmg', 'jpackagePkg'
+}
+
+tasks.register('jpackageLinux') {
+    dependsOn 'jpackageDeb', 'jpackageRpm'
+}
+
+tasks.named('build') {
+    dependsOn 'shadowJar', 'shadowDistZip', 'jpackageAppImage'
 }
 
 tasks.named('test') {

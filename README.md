@@ -9,28 +9,16 @@ gop를 사용하여 아래의 내용으로 database에 대한 상태를 확인 �
 
 ## env
 
-Lang : JAVA SE 17 (61)  
+Lang : JAVA SE 21  
 Database Class : DriverManager
 ```
-$ wget https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.rpm
-$ sudo rpm -ivh jdk-17_linux-x64_bin.rpm
+$ wget https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.rpm
+$ sudo rpm -ivh jdk-21_linux-x64_bin.rpm
 $ sudo alternatives --config java
 
 
 % ./gradlew -version
-
-------------------------------------------------------------
-Gradle 7.3
-------------------------------------------------------------
-
-Build time:   2021-11-09 20:40:36 UTC
-Revision:     96754b8c44399658178a768ac764d727c2addb37
-
-Kotlin:       1.5.31
-Groovy:       3.0.9
-Ant:          Apache Ant(TM) version 1.10.11 compiled on July 10 2021
-JVM:          17.0.6 (Oracle Corporation 17.0.6+9-LTS-190)
-OS:           Mac OS X 13.2.1 x86_64
+Gradle 9.3.1
 ```
 ## 시작하기: 
 소스를 받아서 컴파일 합니다.
@@ -121,6 +109,60 @@ $ java -jar gop.jar -help
  java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json -tag tag1 -head 10
  java -jar gop.jar -config resource/config.json -client -log resource/log_20221201.json
 ~~~
+  
+## Packaging (fat-jar)
+
+```
+$ ./gradlew shadowJar
+$ ls gop/build/libs
+gop-all.jar
+```
+
+## Packaging (shadow distribution zip)
+
+```
+$ ./gradlew shadowDistZip
+$ ls gop/build/distributions
+gop-shadow.zip
+```
+
+## Packaging (native launcher: Linux/macOS)
+
+```
+$ ./gradlew jpackageAppImage
+$ ls gop/build/jpackage
+gop
+```
+
+Linux output: `gop/build/jpackage/gop/bin/gop`  
+macOS output: `gop/build/jpackage/gop.app/Contents/MacOS/gop`
+
+## Packaging (installers)
+
+macOS:
+```
+$ ./gradlew jpackageDmg
+$ ./gradlew jpackagePkg
+// or
+$ ./gradlew jpackageMac
+```
+
+Linux:
+```
+$ ./gradlew jpackageDeb
+$ ./gradlew jpackageRpm
+// or
+$ ./gradlew jpackageLinux
+```
+
+Windows:
+```
+$ ./gradlew jpackageMsi
+// or
+$ ./gradlew jpackageWindows
+```
+
+Note: installer builds must be run on their target OS.
 
 
 ## Config
