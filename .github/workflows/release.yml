@@ -59,8 +59,15 @@ jobs:
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p artifacts
-          cp gop/build/distributions/gop-shadow-*.zip "artifacts/gop-${VERSION}-macos-shadow.zip"
-          cp gop/build/libs/gop-*-all.jar "artifacts/gop-${VERSION}-macos-all.jar"
+          SHADOW_ZIP=$(ls gop/build/distributions/gop-shadow-*.zip gop/build/distributions/gop-shadow.zip 2>/dev/null | head -n 1)
+          ALL_JAR=$(ls gop/build/libs/gop-*-all.jar gop/build/libs/gop-all.jar 2>/dev/null | head -n 1)
+          if [ -z "$SHADOW_ZIP" ] || [ -z "$ALL_JAR" ]; then
+            ls -la gop/build/distributions gop/build/libs
+            echo "missing artifacts"
+            exit 1
+          fi
+          cp "$SHADOW_ZIP" "artifacts/gop-${VERSION}-macos-shadow.zip"
+          cp "$ALL_JAR" "artifacts/gop-${VERSION}-macos-all.jar"
           cp gop/build/jpackage/*.dmg "artifacts/gop-${VERSION}-macos.dmg"
           cp gop/build/jpackage/*.pkg "artifacts/gop-${VERSION}-macos.pkg"
 
@@ -75,8 +82,15 @@ jobs:
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p artifacts
-          cp gop/build/distributions/gop-shadow-*.zip "artifacts/gop-${VERSION}-linux-shadow.zip"
-          cp gop/build/libs/gop-*-all.jar "artifacts/gop-${VERSION}-linux-all.jar"
+          SHADOW_ZIP=$(ls gop/build/distributions/gop-shadow-*.zip gop/build/distributions/gop-shadow.zip 2>/dev/null | head -n 1)
+          ALL_JAR=$(ls gop/build/libs/gop-*-all.jar gop/build/libs/gop-all.jar 2>/dev/null | head -n 1)
+          if [ -z "$SHADOW_ZIP" ] || [ -z "$ALL_JAR" ]; then
+            ls -la gop/build/distributions gop/build/libs
+            echo "missing artifacts"
+            exit 1
+          fi
+          cp "$SHADOW_ZIP" "artifacts/gop-${VERSION}-linux-shadow.zip"
+          cp "$ALL_JAR" "artifacts/gop-${VERSION}-linux-all.jar"
           cp gop/build/jpackage/*.deb "artifacts/gop-${VERSION}-linux.deb"
           cp gop/build/jpackage/*.rpm "artifacts/gop-${VERSION}-linux.rpm"
 
@@ -93,8 +107,15 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME.Substring(1)
           New-Item -ItemType Directory -Force artifacts | Out-Null
-          Copy-Item (Get-Item gop\\build\\distributions\\gop-shadow-*.zip) "artifacts\\gop-$version-windows-shadow.zip"
-          Copy-Item (Get-Item gop\\build\\libs\\gop-*-all.jar) "artifacts\\gop-$version-windows-all.jar"
+          $shadow = Get-ChildItem gop\\build\\distributions\\gop-shadow-*.zip, gop\\build\\distributions\\gop-shadow.zip -ErrorAction SilentlyContinue | Select-Object -First 1
+          $allJar = Get-ChildItem gop\\build\\libs\\gop-*-all.jar, gop\\build\\libs\\gop-all.jar -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $shadow -or -not $allJar) {
+            Get-ChildItem gop\\build\\distributions\\ | Format-Table -AutoSize | Out-Host
+            Get-ChildItem gop\\build\\libs\\ | Format-Table -AutoSize | Out-Host
+            throw \"missing artifacts\"
+          }
+          Copy-Item $shadow.FullName \"artifacts\\gop-$version-windows-shadow.zip\"
+          Copy-Item $allJar.FullName \"artifacts\\gop-$version-windows-all.jar\"
           Copy-Item gop\\build\\jpackage\\*.msi "artifacts\\gop-$version-windows.msi"
 
       - name: Upload artifacts
