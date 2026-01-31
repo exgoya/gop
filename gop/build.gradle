@@ -18,7 +18,22 @@ java {
     }
 }
 
-version = project.findProperty('releaseVersion') ?: '1.0.0'
+def releaseVersion = (project.findProperty('releaseVersion') ?: '1.0.0').toString()
+version = releaseVersion
+
+def toInstallerVersion = { String v ->
+    def cleaned = v.replaceAll('[^0-9.]', '')
+    if (!cleaned) {
+        return '1.0.0'
+    }
+    def parts = cleaned.tokenize('.').take(3).collect { it.isInteger() ? it : '0' }
+    while (parts.size() < 3) {
+        parts.add('0')
+    }
+    parts.join('.')
+}
+
+def installerVersion = toInstallerVersion(releaseVersion)
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -99,7 +114,6 @@ def jpackageCommand = { String type, File outputDir ->
         '--main-jar', shadowJarFileName,
         '--main-class', application.mainClass.get(),
         '--vendor', 'exgoya',
-        '--app-version', project.version.toString(),
         '--description', 'Database monitoring console tool'
     ]
 }
@@ -118,6 +132,7 @@ tasks.register('jpackageDmg', Exec) {
         requireOs('dmg', org.gradle.internal.os.OperatingSystem.current().isMacOsX())
     }
     commandLine(jpackageCommand('dmg', outputDir) + [
+        '--app-version', releaseVersion,
         '--mac-app-category', 'public.app-category.developer-tools',
         '--mac-package-identifier', 'com.exgoya.gop'
     ])
@@ -131,6 +146,7 @@ tasks.register('jpackagePkg', Exec) {
         requireOs('pkg', org.gradle.internal.os.OperatingSystem.current().isMacOsX())
     }
     commandLine(jpackageCommand('pkg', outputDir) + [
+        '--app-version', releaseVersion,
         '--mac-app-category', 'public.app-category.developer-tools',
         '--mac-package-identifier', 'com.exgoya.gop'
     ])
@@ -144,6 +160,7 @@ tasks.register('jpackageDeb', Exec) {
         requireOs('deb', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
     commandLine(jpackageCommand('deb', outputDir) + [
+        '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
     ])
 }
@@ -156,6 +173,7 @@ tasks.register('jpackageRpm', Exec) {
         requireOs('rpm', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
     commandLine(jpackageCommand('rpm', outputDir) + [
+        '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
     ])
 }
@@ -167,7 +185,9 @@ tasks.register('jpackageMsi', Exec) {
         outputDir.mkdirs()
         requireOs('msi', org.gradle.internal.os.OperatingSystem.current().isWindows())
     }
-    commandLine(jpackageCommand('msi', outputDir))
+    commandLine(jpackageCommand('msi', outputDir) + [
+        '--app-version', installerVersion
+    ])
 }
 
 tasks.register('jpackageWindows') {
