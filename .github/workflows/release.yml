@@ -153,11 +153,14 @@ jobs:
           if (-not $shadow -or -not $allJar) {
             Get-ChildItem gop\\build\\distributions\\ | Format-Table -AutoSize | Out-Host
             Get-ChildItem gop\\build\\libs\\ | Format-Table -AutoSize | Out-Host
-            throw \"missing artifacts\"
+            throw "missing artifacts"
           }
-          Copy-Item $shadow.FullName \"artifacts\\gop-$version-windows-shadow.zip\"
-          Copy-Item $allJar.FullName \"artifacts\\gop-$version-windows-all.jar\"
-          Copy-Item gop\\build\\jpackage\\*.msi "artifacts\\gop-$version-windows.msi"
+          $shadowOut = Join-Path "artifacts" ("gop-$version-windows-shadow.zip")
+          $allOut = Join-Path "artifacts" ("gop-$version-windows-all.jar")
+          $msiOut = Join-Path "artifacts" ("gop-$version-windows.msi")
+          Copy-Item $shadow.FullName $shadowOut
+          Copy-Item $allJar.FullName $allOut
+          Copy-Item gop\\build\\jpackage\\*.msi $msiOut
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
