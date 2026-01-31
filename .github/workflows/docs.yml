@@ -6,6 +6,8 @@ on:
     paths:
       - "docs/**"
       - "README.md"
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -29,12 +31,46 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install sphinx furo
+      - name: Install repo tools
+        run: sudo apt-get update && sudo apt-get install -y dpkg-dev createrepo-c
       - name: Build docs
         run: make -C docs html
+      - name: Prepare site
+        run: |
+          rm -rf site
+          mkdir -p site
+          cp -a docs/build/html/. site/
+      - name: Build package repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=""
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release list -L 1 --json tagName -q '.[0].tagName' || true)
+          fi
+          if [ -z "$TAG" ]; then
+            echo "no release tag found, skipping repo"
+            exit 0
+          fi
+          mkdir -p site/repo/deb site/repo/rpm
+          TMP_DIR=$(mktemp -d)
+          gh release download "$TAG" -p "*.deb" -p "*.rpm" -D "$TMP_DIR" || true
+          cp -f "$TMP_DIR"/*.deb site/repo/deb/ 2>/dev/null || true
+          cp -f "$TMP_DIR"/*.rpm site/repo/rpm/ 2>/dev/null || true
+          if [ "$(ls -A site/repo/deb 2>/dev/null)" ]; then
+            (cd site/repo/deb && dpkg-scanpackages . /dev/null > Packages && gzip -9 -c Packages > Packages.gz)
+          fi
+          if [ "$(ls -A site/repo/rpm 2>/dev/null)" ]; then
+            createrepo_c site/repo/rpm
+          fi
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/build/html
+          path: site
 
   deploy:
     needs: build

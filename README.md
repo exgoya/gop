@@ -34,6 +34,28 @@ gop version
 
 > 패키지는 jpackage 기반이며 런타임을 포함합니다. (JDK 없이 실행 가능)
 
+### APT/YUM 저장소 (GitHub Pages)
+
+**APT (Debian/Ubuntu)**:
+```
+echo "deb [trusted=yes] https://exgoya.github.io/gop/repo/deb ./" | sudo tee /etc/apt/sources.list.d/gop.list
+sudo apt update
+sudo apt install gop
+```
+
+**YUM/DNF (RHEL/Fedora)**:
+```
+cat <<'EOF' | sudo tee /etc/yum.repos.d/gop.repo
+[gop]
+name=gop
+baseurl=https://exgoya.github.io/gop/repo/rpm/
+enabled=1
+gpgcheck=0
+EOF
+
+sudo yum install gop
+```
+
 ## 빠른 시작 (MySQL 예시)
 
 ### 1) 테스트용 DB 실행 (Docker)
