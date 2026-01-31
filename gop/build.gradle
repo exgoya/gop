@@ -100,10 +100,7 @@ def jpackageCommand = { String type, File outputDir ->
         '--main-class', application.mainClass.get(),
         '--vendor', 'exgoya',
         '--app-version', project.version.toString(),
-        '--description', 'Database monitoring console tool',
-        '--linux-app-category', 'Development;System;',
-        '--mac-app-category', 'public.app-category.developer-tools',
-        '--mac-package-identifier', 'com.exgoya.gop'
+        '--description', 'Database monitoring console tool'
     ]
 }
 
@@ -120,7 +117,10 @@ tasks.register('jpackageDmg', Exec) {
         outputDir.mkdirs()
         requireOs('dmg', org.gradle.internal.os.OperatingSystem.current().isMacOsX())
     }
-    commandLine(jpackageCommand('dmg', outputDir))
+    commandLine(jpackageCommand('dmg', outputDir) + [
+        '--mac-app-category', 'public.app-category.developer-tools',
+        '--mac-package-identifier', 'com.exgoya.gop'
+    ])
 }
 
 tasks.register('jpackagePkg', Exec) {
@@ -130,7 +130,10 @@ tasks.register('jpackagePkg', Exec) {
         outputDir.mkdirs()
         requireOs('pkg', org.gradle.internal.os.OperatingSystem.current().isMacOsX())
     }
-    commandLine(jpackageCommand('pkg', outputDir))
+    commandLine(jpackageCommand('pkg', outputDir) + [
+        '--mac-app-category', 'public.app-category.developer-tools',
+        '--mac-package-identifier', 'com.exgoya.gop'
+    ])
 }
 
 tasks.register('jpackageDeb', Exec) {
@@ -140,7 +143,9 @@ tasks.register('jpackageDeb', Exec) {
         outputDir.mkdirs()
         requireOs('deb', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    commandLine(jpackageCommand('deb', outputDir))
+    commandLine(jpackageCommand('deb', outputDir) + [
+        '--linux-app-category', 'Development;System;'
+    ])
 }
 
 tasks.register('jpackageRpm', Exec) {
@@ -150,7 +155,9 @@ tasks.register('jpackageRpm', Exec) {
         outputDir.mkdirs()
         requireOs('rpm', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    commandLine(jpackageCommand('rpm', outputDir))
+    commandLine(jpackageCommand('rpm', outputDir) + [
+        '--linux-app-category', 'Development;System;'
+    ])
 }
 
 tasks.register('jpackageMsi', Exec) {

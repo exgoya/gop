@@ -46,7 +46,7 @@ jobs:
 
       - name: Install WiX (Windows)
         if: runner.os == 'Windows'
-        run: choco install wix -y
+        run: choco install wixtoolset -y
 
       - name: Build packages (macOS)
         if: runner.os == 'macOS'
