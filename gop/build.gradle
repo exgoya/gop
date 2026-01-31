@@ -18,7 +18,7 @@ java {
     }
 }
 
-version = '1.0.0'
+version = project.findProperty('releaseVersion') ?: '1.0.0'
 
 repositories {
     // Use Maven Central for resolving dependencies.
