@@ -21,3 +21,8 @@ Features
    api
    packaging
    development
+
+.. toctree::
+   :hidden:
+
+   build/html/index
