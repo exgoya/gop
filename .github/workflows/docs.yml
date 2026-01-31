@@ -67,6 +67,22 @@ jobs:
           if [ "$(ls -A site/repo/rpm 2>/dev/null)" ]; then
             createrepo_c site/repo/rpm
           fi
+          cat > site/repo/deb/index.html <<'HTML'
+          <html><body>
+          <h1>gop APT repository</h1>
+          <ul>
+            <li><a href="Packages.gz">Packages.gz</a></li>
+          </ul>
+          </body></html>
+          HTML
+          cat > site/repo/rpm/index.html <<'HTML'
+          <html><body>
+          <h1>gop YUM repository</h1>
+          <ul>
+            <li><a href="repodata/repomd.xml">repodata/repomd.xml</a></li>
+          </ul>
+          </body></html>
+          HTML
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
