@@ -52,6 +52,20 @@ jobs:
         if: runner.os == 'macOS'
         run: ./gradlew -PreleaseVersion="${GITHUB_REF_NAME#v}" shadowDistZip jpackageMac
 
+      - name: Normalize artifacts (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHADOW_ZIP=$(ls gop/build/distributions/gop-shadow-*.zip 2>/dev/null | head -n 1 || true)
+          ALL_JAR=$(ls gop/build/libs/gop-*-all.jar 2>/dev/null | head -n 1 || true)
+          if [ -n "$SHADOW_ZIP" ]; then
+            cp "$SHADOW_ZIP" gop/build/distributions/gop-shadow.zip
+          fi
+          if [ -n "$ALL_JAR" ]; then
+            cp "$ALL_JAR" gop/build/libs/gop-all.jar
+          fi
+
       - name: Prepare artifacts (macOS)
         if: runner.os == 'macOS'
         shell: bash
@@ -74,6 +88,20 @@ jobs:
       - name: Build packages (Linux)
         if: runner.os == 'Linux'
         run: ./gradlew -PreleaseVersion="${GITHUB_REF_NAME#v}" shadowDistZip jpackageLinux
+
+      - name: Normalize artifacts (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHADOW_ZIP=$(ls gop/build/distributions/gop-shadow-*.zip 2>/dev/null | head -n 1 || true)
+          ALL_JAR=$(ls gop/build/libs/gop-*-all.jar 2>/dev/null | head -n 1 || true)
+          if [ -n "$SHADOW_ZIP" ]; then
+            cp "$SHADOW_ZIP" gop/build/distributions/gop-shadow.zip
+          fi
+          if [ -n "$ALL_JAR" ]; then
+            cp "$ALL_JAR" gop/build/libs/gop-all.jar
+          fi
 
       - name: Prepare artifacts (Linux)
         if: runner.os == 'Linux'
@@ -100,6 +128,19 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME.Substring(1)
           .\\gradlew.bat -PreleaseVersion=$version shadowDistZip jpackageWindows
+
+      - name: Normalize artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $shadow = Get-ChildItem gop\\build\\distributions\\gop-shadow-*.zip -ErrorAction SilentlyContinue | Select-Object -First 1
+          $allJar = Get-ChildItem gop\\build\\libs\\gop-*-all.jar -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($shadow) {
+            Copy-Item $shadow.FullName gop\\build\\distributions\\gop-shadow.zip -Force
+          }
+          if ($allJar) {
+            Copy-Item $allJar.FullName gop\\build\\libs\\gop-all.jar -Force
+          }
 
       - name: Prepare artifacts (Windows)
         if: runner.os == 'Windows'
