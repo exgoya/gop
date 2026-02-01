@@ -89,8 +89,6 @@ def resourceArgsFor = { boolean linux ->
     File dir = (linux && linuxResourcesDir.exists()) ? linuxResourcesDir : baseResourcesDir
     return dir.exists() ? ['--resource-dir', dir.absolutePath] : []
 }
-def linuxPostInstall = layout.projectDirectory.file("packaging/scripts/linux-post-install.sh").asFile
-def linuxPostUninstall = layout.projectDirectory.file("packaging/scripts/linux-post-uninstall.sh").asFile
 def linuxAppImageDir = layout.buildDirectory.dir("jpackage/gop").get().asFile
 
 tasks.register('jpackageAppImage', Exec) {
@@ -229,12 +227,6 @@ tasks.register('jpackageDeb', Exec) {
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
     ]
-    if (linuxPostInstall.exists()) {
-        argsList += ['--linux-post-install', linuxPostInstall.absolutePath]
-    }
-    if (linuxPostUninstall.exists()) {
-        argsList += ['--linux-post-uninstall', linuxPostUninstall.absolutePath]
-    }
     commandLine(argsList)
 }
 
@@ -249,12 +241,6 @@ tasks.register('jpackageRpm', Exec) {
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
     ]
-    if (linuxPostInstall.exists()) {
-        argsList += ['--linux-post-install', linuxPostInstall.absolutePath]
-    }
-    if (linuxPostUninstall.exists()) {
-        argsList += ['--linux-post-uninstall', linuxPostUninstall.absolutePath]
-    }
     commandLine(argsList)
 }
 
