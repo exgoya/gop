@@ -17,10 +17,6 @@ public final class ConfigManager {
 		if (config == null || config.setting == null) {
 			return;
 		}
-		if (config.setting.configId != null && !config.setting.configId.trim().isEmpty()) {
-			validateId("config id", config.setting.configId);
-			return;
-		}
 		String name = configFile == null ? "config" : configFile.getName();
 		int dot = name.lastIndexOf('.');
 		if (dot > 0) {

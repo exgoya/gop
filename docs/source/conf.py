@@ -1,4 +1,5 @@
 # Configuration file for the Sphinx documentation builder.
+import os
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
@@ -9,7 +10,8 @@
 project = 'gop'
 copyright = '2024, exgoya'
 author = 'exgoya'
-release = '1.0.0'
+release = os.getenv('GOP_DOC_VERSION', 'dev')
+version = release
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

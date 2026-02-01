@@ -27,15 +27,29 @@ public class ReadLog {
 
 	public ReadLog(File file, Gson gson, Config config) throws JsonSyntaxException, IOException, ParseException {
 		super();
-		File rFile = file;
+		readFile(file, gson);
+	}
 
-		FileInputStream fis = new FileInputStream(rFile);
+	public ReadLog(Iterable<File> files, Gson gson) throws JsonSyntaxException, IOException, ParseException {
+		super();
+		if (files == null) {
+			return;
+		}
+		for (File file : files) {
+			readFile(file, gson);
+		}
+	}
+
+	private void readFile(File file, Gson gson) throws IOException, ParseException {
+		if (file == null || !file.exists()) {
+			return;
+		}
+		FileInputStream fis = new FileInputStream(file);
 		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
 		@SuppressWarnings("resource")
 		BufferedReader reader = new BufferedReader(isr);
 
 		String line = "";
-
 		while ((line = reader.readLine()) != null) {
 			Data obj = gson.fromJson(line, Data.class);
 			LocalDateTime ts = stringToTimestamp(obj.time, gson);

@@ -72,7 +72,10 @@ public class CommandLineParser {
 
 	public static void printHelp() {
 		System.out.println(" ---");
-		System.out.println(" gop <server|run|watch> -config <config file path> [options]");
+		System.out.println(" gop server -config <config file path> [options]");
+		System.out.println(" gop run -config <config file path> [options]");
+		System.out.println(" gop ls [<config>[/<source>[/YYYY[/MM]]]] [-path <log root>]");
+		System.out.println(" gop watch [-config <config name>] [-source <sourceId>] [tail] [options]");
 		System.out.println(" gop version | gop -version");
 		System.out.println(" ");
 		System.out.println(" run option:");
@@ -80,24 +83,45 @@ public class CommandLineParser {
 		System.out.println("   -interval-ms <ms>");
 		System.out.println("   * run mode is continuous (Ctrl+C to stop)");
 		System.out.println(" ");
+		System.out.println(" ls option:");
+		System.out.println("   gop ls                         (list configs)");
+		System.out.println("   gop ls <config>                 (list sources)");
+		System.out.println("   gop ls <config>/<source>        (list years)");
+		System.out.println("   gop ls <config>/<source>/YYYY   (list months)");
+		System.out.println("   gop ls <config>/<source>/YYYY/MM (list logs)");
+		System.out.println("   -path <log root path>  (default: data/ or GOP_LOG_PATH)");
+		System.out.println(" ");
 		System.out.println(" watch option:");
+		System.out.println("   -config <config name>");
+		System.out.println("   -source <sourceId>");
 		System.out.println(
-				"   -log <log file path> [ -time 'yyyy-mm-dd hh24:mi:ss.fff' 'yyyy-mm-dd hh24:mi:ss.fff' | -name <column name> | -tag <tag name> ]");
-		System.out.println("			[ -head | -tail <print count> ]  ");
-		System.out.println("   * watch requires -log");
+				"   [tail] [ -time 'yyyy-mm-dd hh24:mi:ss.fff' 'yyyy-mm-dd hh24:mi:ss.fff' | -name <column name> | -tag <tag name> ]");
+		System.out.println("   [ -head | -tail <print count> ]");
+		System.out.println("   [ -f <log file path> ]");
+		System.out.println("   [ -follow | -F ]");
+		System.out.println("   [ -path <log root path> ]");
+		System.out.println("   [ -csv ]");
 		System.out.println(" ");
 		System.out.println(" ---");
 		System.out.println(" sample use");
-		System.out.println(" gop server -config resource/config.json");
-		System.out.println(" gop run -config resource/config.json");
+		System.out.println(" gop server -config /opt/gop/config/mysql.json");
+		System.out.println(" gop run -config /opt/gop/config/mysql.json");
 		System.out.println(
-				" gop watch -config resource/config.json -log resource/log_20221201.json -time '2022-12-01 03:14:40.000' '2022-12-01 03:15:00.000'");
+				" gop ls");
 		System.out.println(
-				" gop watch -config resource/config.json -log resource/log_20221201.json -name execute -tail 10");
+				" gop ls config-mysql/mysql-local/2026");
 		System.out.println(
-				" gop watch -config resource/config.json -log resource/log_20221201.json -tag tag1 -head 10");
+				" gop watch -source mysql-local -time '2022-12-01 03:14:40.000' '2022-12-01 03:15:00.000'");
+		System.out.println(
+				" gop watch -source mysql-local -name execute -tail 10");
+		System.out.println(
+				" gop watch -source mysql-local -tag tag1 -head 10");
 		System.out
-				.println(" gop watch -config resource/config.json -log resource/log_20221201.json");
+				.println(" gop watch -source mysql-local");
+		System.out
+				.println(" gop watch -config config-multi");
+		System.out
+				.println(" gop watch -source mysql-local tail -follow");
 		System.out.println(" ");
     }
 }

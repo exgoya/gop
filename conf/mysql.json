@@ -1,0 +1,71 @@
+{
+  "setting": {
+    "jdbcSource": {
+      "url": "jdbc:mysql://127.0.0.1:3306/",
+      "dbName": "gop",
+      "driverClass": "com.mysql.cj.jdbc.Driver",
+      "jdbcProperties": [
+        {
+          "name": "user",
+          "value": "gop"
+        },
+        {
+          "name": "password",
+          "value": "gop"
+        },
+        {
+          "name": "serverTimezone",
+          "value": "UTC"
+        },
+        {
+          "name": "useSSL",
+          "value": "false"
+        }
+      ]
+    },
+    "source": "mysql-local",
+    "timeInterval": 1000,
+    "consolePrint": true,
+    "pageSize": "10",
+    "retention": "2",
+    "printCSV": false,
+    "fileLog": {
+      "enable": true,
+      "logPath": "data/"
+    },
+    "api": {
+      "enable": true,
+      "port": 18080,
+      "threadPoolSize": 4,
+      "logPath": "data/api.log"
+    }
+  },
+  "measure": [
+    {
+      "name": "threads_connected",
+      "diff": false,
+      "sql": "select variable_value from performance_schema.global_status where variable_name = 'Threads_connected'",
+      "tag": "mysql",
+      "alertValue": 100,
+      "alertPolicy": 1
+    },
+    {
+      "name": "threads_running",
+      "diff": false,
+      "sql": "select variable_value from performance_schema.global_status where variable_name = 'Threads_running'",
+      "tag": "mysql"
+    },
+    {
+      "name": "connections",
+      "diff": true,
+      "sql": "select variable_value from performance_schema.global_status where variable_name = 'Connections'",
+      "tag": "mysql"
+    },
+    {
+      "name": "uptime",
+      "diff": false,
+      "sql": "select variable_value from performance_schema.global_status where variable_name = 'Uptime'",
+      "tag": "mysql"
+    }
+  ]
+}

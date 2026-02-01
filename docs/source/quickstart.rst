@@ -15,26 +15,39 @@ This quickstart uses the bundled Docker compose to run MySQL locally.
 
 ::
 
-   gop server -config data/config-mysql.json
+   # Installed package (Linux)
+   gop server -config /opt/gop/config/mysql.json
+
+   # Source checkout
+   gop server -config conf/mysql.json
 
 3) Console mode (run)
 ---------------------
 
 ::
 
-   gop run -config data/config-mysql.json -interval 1
+   # Installed package (Linux)
+   gop run -config /opt/gop/config/mysql.json -interval 1
+
+   # Source checkout
+   gop run -config conf/mysql.json -interval 1
 
 4) Read logs (watch)
 --------------------
 
-After logs are written, point watch to a log file:
+After logs are written, list sources and watch:
 
 ::
 
-   gop watch -config data/config-mysql.json -log <log_file> -head 5
+   gop ls
+   gop ls <config>
+   gop ls <config>/<source>/2026
+
+   gop watch -config <config> -source <sourceId> -head 5
+   gop watch -config <config>
 
 Log path pattern:
 
 ::
 
-   <logPath>/<configId>/YYYY/MM/<source>/log_YYYYMMDD.json
+   <logPath>/<configName>/YYYY/MM/<source>/log_YYYYMMDD.json

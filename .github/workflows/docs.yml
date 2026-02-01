@@ -27,6 +27,24 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Resolve doc version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=""
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release list -L 1 --json tagName -q '.[0].tagName' || true)
+          fi
+          if [ -z "$TAG" ]; then
+            TAG="dev"
+          fi
+          VERSION="${TAG#v}"
+          echo "GOP_DOC_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "GOP_DOC_TAG=$TAG" >> "$GITHUB_ENV"
       - name: Install docs deps
         run: |
           python -m pip install --upgrade pip

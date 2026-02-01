@@ -10,20 +10,32 @@ Logs are stored under:
 
 ::
 
-   <logPath>/<configId>/YYYY/MM/<source>/log_YYYYMMDD.json
+   <logPath>/<configName>/YYYY/MM/<source>/log_YYYYMMDD.json
 
-If ``configId`` is not set, the config filename (without extension) is used.
-A copy of the config is stored as ``config.json`` in the same directory when
-server mode starts.
+``configName`` defaults to the config filename (without extension).
+A copy of the config is stored as ``config.json`` under that folder when
+server mode starts. If the same name exists but content differs, the
+existing folder is backed up before a new one is created.
 
 Samples
 -------
 
-- ``data/config-mysql.json``
-- ``data/config-mariadb.json``
-- ``data/config-postgres.json``
-- ``data/config-oracle.json``
-- ``data/config-multi.json``
+- Installed packages:
+
+  - ``/opt/gop/config/mysql.json`` (Linux)
+  - ``/opt/gop/config/mariadb.json``
+  - ``/opt/gop/config/postgres.json``
+  - ``/opt/gop/config/oracle.json``
+  - ``/opt/gop/config/multi.json``
+  - ``/opt/gop/config/config.json`` (default, MySQL)
+
+- Source checkout:
+
+  - ``conf/mysql.json``
+  - ``conf/mariadb.json``
+  - ``conf/postgres.json``
+  - ``conf/oracle.json``
+  - ``conf/multi.json``
 
 Key fields
 ----------
@@ -33,7 +45,6 @@ Key fields
 
 - ``jdbcSource`` (required)
 - ``source`` (optional)
-- ``configId`` (optional)
 - ``timeInterval`` (required)
 - ``consolePrint`` (required)
 - ``pageSize`` (required)

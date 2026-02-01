@@ -83,6 +83,11 @@ def jpackageExecutable = {
     }.get().metadata.installationPath.file("bin/jpackage").asFile
 }
 
+def packagingResourcesDir = layout.projectDirectory.dir("packaging/resources").asFile
+def jpackageResourceArgs = packagingResourcesDir.exists()
+        ? ['--resource-dir', packagingResourcesDir.absolutePath]
+        : []
+
 tasks.register('jpackageAppImage', Exec) {
     dependsOn 'shadowJar'
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
@@ -102,6 +107,9 @@ tasks.register('jpackageAppImage', Exec) {
         '--main-jar', shadowJarFileName,
         '--main-class', application.mainClass.get()
     )
+    if (!jpackageResourceArgs.isEmpty()) {
+        args jpackageResourceArgs
+    }
 }
 
 def jpackageCommand = { String type, File outputDir ->
@@ -115,7 +123,7 @@ def jpackageCommand = { String type, File outputDir ->
         '--main-class', application.mainClass.get(),
         '--vendor', 'exgoya',
         '--description', 'Database monitoring console tool'
-    ]
+    ] + jpackageResourceArgs
 }
 
 def requireOs = { String label, boolean ok ->
@@ -209,4 +217,14 @@ tasks.named('build') {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+distributions {
+    main {
+        contents {
+            if (packagingResourcesDir.exists()) {
+                from(packagingResourcesDir)
+            }
+        }
+    }
 }

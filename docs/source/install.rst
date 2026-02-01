@@ -9,11 +9,11 @@ Download the package from Releases and install:
 ::
 
    # DEB
-   sudo dpkg -i gop_1.0.0_amd64.deb
+   sudo dpkg -i gop_|release|_amd64.deb
    sudo apt -f install
 
    # RPM
-   sudo rpm -ivh gop-1.0.0-1.x86_64.rpm
+   sudo rpm -ivh gop-|release|-1.x86_64.rpm
 
 Check version:
 
@@ -26,6 +26,11 @@ Notes
 
 - jpackage builds include a runtime, so you do not need a JDK to run.
 - Installer builds must be produced on their target OS.
+- Sample configs are installed under:
+
+  - Linux: ``/opt/gop/config``
+  - macOS: ``/Applications/gop.app/Contents/app/config``
+  - Windows: ``C:\Program Files\gop\config``
 
 APT/YUM repo (GitHub Pages)
 ---------------------------

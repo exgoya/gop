@@ -18,6 +18,7 @@ Features
    install
    commands
    config
+   spec
    api
    packaging
    development

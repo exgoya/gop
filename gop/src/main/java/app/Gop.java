@@ -6,12 +6,19 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -50,13 +57,22 @@ public class Gop {
 		}
 		String command = args[0];
 		String[] subArgs = java.util.Arrays.copyOfRange(args, 1, args.length);
-		CommandLineParser clp = new CommandLineParser(subArgs);
 
-		boolean help = clp.getFlag("help");
-		if (help) {
+		if (hasHelpFlag(subArgs)) {
 			CommandLineParser.printHelp();
 			System.exit(0);
 		}
+
+		if ("ls".equalsIgnoreCase(command)) {
+			handleLs(subArgs);
+			return;
+		}
+		if ("watch".equalsIgnoreCase(command)) {
+			handleWatch(subArgs);
+			return;
+		}
+
+		CommandLineParser clp = new CommandLineParser(subArgs);
 
 		String configFile = clp.getArgumentValue("config")[0];
 		if (configFile == null) {
@@ -64,14 +80,6 @@ public class Gop {
 			CommandLineParser.printHelp();
 			System.exit(0);
 		}
-		String log = clp.getArgumentValue("log")[0];
-		int head = clp.getArgumentValueInt("head");
-		int tail = clp.getArgumentValueInt("tail");
-		String time1 = clp.getArgumentValue("time")[0];
-		String time2 = clp.getArgumentValue("time")[1];
-		String tagArg = clp.getArgumentValue("tag")[0];
-		String nameArg = clp.getArgumentValue("name")[0];
-		
 		File rFile = new File(configFile);
 		Gson gson = new GsonBuilder().setLenient().create();
 
@@ -93,34 +101,1169 @@ public class Gop {
 				config.setting.timeInterval = runIntervalSec * 1000;
 			}
 			runLoop(config, gson, false);
-		} else if ("watch".equalsIgnoreCase(command)) {
-			if (log == null) {
-				System.out.println("watch requires -log <log file path>");
-				System.exit(0);
-			}
-			ReadLog rl = new ReadLog(new File(log), gson, config);
-
-			if (time1 != null && time2 != null) {
-				LocalDateTime stTs = stringToDate(time1);
-				LocalDateTime edTs = stringToDate(time2);
-				rl.setRangeTimeMap(stTs, edTs);
-				printTableMap(rl.rangeTimeMap, head, tail,config.setting.printCSV);
-			} else if (nameArg != null) {
-				String name = nameArg;
-				rl.setNameMap(name);
-				printTableMap(rl.nameMap, head, tail,config.setting.printCSV);
-			} else if (tagArg != null) {
-				String tag = tagArg;
-				rl.setTagMap(tag);
-				printTableMap(rl.tagMap, head, tail,config.setting.printCSV);
-			} else {
-				printTableMap(rl.timeMap, head, tail,config.setting.printCSV);
-			}
 		} else {
 			System.out.println("invalid command: " + command);
 			CommandLineParser.printHelp();
 			System.exit(0);
 		}
+	}
+
+	private static void handleLs(String[] args) {
+		LsArgs ls = parseLsArgs(args);
+		File logRoot = resolveLogRoot(ls.path);
+		String target = ls.target == null ? "" : ls.target.trim();
+		List<String> parts = splitPath(target);
+
+		if (isConfigDir(logRoot)) {
+			handleLsInConfig(logRoot, parts, target);
+			return;
+		}
+
+		if (parts.isEmpty()) {
+			printConfigList(logRoot);
+			return;
+		}
+
+		File configDir = findConfigDir(logRoot, parts.get(0));
+		if (configDir != null) {
+			handleLsInConfig(configDir, parts.subList(1, parts.size()), target);
+			return;
+		}
+
+		// fallback: source-only view across configs
+		handleLsSourceOnly(logRoot, parts, target);
+	}
+
+	private static void handleWatch(String[] args) throws Exception {
+		WatchArgs wa = parseWatchArgs(args);
+		if (wa.mode != null && !wa.mode.equalsIgnoreCase("tail")) {
+			System.out.println("invalid watch mode: " + wa.mode);
+			System.exit(0);
+		}
+		File logRoot = resolveLogRoot(wa.path);
+		File configDir = null;
+		if (wa.configName != null && !wa.configName.trim().isEmpty()) {
+			ConfigManager.validateId("config name", wa.configName);
+			configDir = findConfigDir(logRoot, wa.configName.trim());
+			if (configDir == null) {
+				System.out.println("config not found: " + wa.configName);
+				return;
+			}
+		}
+
+		if (wa.follow) {
+			if (wa.source == null || wa.source.trim().isEmpty()) {
+				System.out.println("follow requires -source <sourceId>");
+				return;
+			}
+			validateSourceDir(wa.source);
+			followWatch(wa, logRoot, configDir);
+			return;
+		}
+
+		if (wa.source == null || wa.source.trim().isEmpty()) {
+			if (wa.file != null) {
+				System.out.println("watch without -source cannot use -f");
+				return;
+			}
+			if (configDir == null) {
+				List<File> configs = listConfigDirs(logRoot);
+				if (configs.isEmpty()) {
+					System.out.println("no configs found under: " + (logRoot == null ? "-" : logRoot.getPath()));
+					return;
+				}
+				if (configs.size() > 1) {
+					System.out.println("multiple configs found. use -config <name>");
+					printConfigList(logRoot);
+					return;
+				}
+				configDir = configs.get(0);
+			}
+			watchAllSources(configDir, wa);
+			return;
+		}
+
+		validateSourceDir(wa.source);
+		watchSingleSource(wa, logRoot, configDir, true);
+	}
+
+	private static boolean hasHelpFlag(String[] args) {
+		if (args == null) {
+			return false;
+		}
+		for (String arg : args) {
+			if (arg == null) {
+				continue;
+			}
+			String v = arg.trim();
+			if (v.equalsIgnoreCase("-help") || v.equalsIgnoreCase("--help") || v.equalsIgnoreCase("-h")) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static File resolveLogRoot(String path) {
+		String base = path;
+		if (base == null || base.trim().isEmpty()) {
+			String env = System.getenv("GOP_LOG_PATH");
+			base = (env == null || env.trim().isEmpty()) ? "data" : env.trim();
+		}
+		return new File(base);
+	}
+
+	private static LsArgs parseLsArgs(String[] args) {
+		LsArgs ls = new LsArgs();
+		if (args == null) {
+			return ls;
+		}
+		for (int i = 0; i < args.length; i++) {
+			String token = args[i];
+			if (token == null) {
+				continue;
+			}
+			if (token.startsWith("-")) {
+				if (token.equalsIgnoreCase("-path")) {
+					if (i + 1 >= args.length) {
+						System.out.println("ls requires -path <log root>");
+						System.exit(0);
+					}
+					ls.path = args[++i];
+				} else {
+					System.out.println("invalid ls option: " + token);
+					System.exit(0);
+				}
+				continue;
+			}
+			if (ls.target == null) {
+				ls.target = token;
+			} else {
+				System.out.println("invalid ls target: " + token);
+				System.exit(0);
+			}
+		}
+		return ls;
+	}
+
+	private static WatchArgs parseWatchArgs(String[] args) {
+		WatchArgs wa = new WatchArgs();
+		if (args == null) {
+			return wa;
+		}
+		for (int i = 0; i < args.length; i++) {
+			String token = args[i];
+			if (token == null) {
+				continue;
+			}
+			if (!token.startsWith("-")) {
+				if (wa.mode == null) {
+					wa.mode = token.trim().toLowerCase();
+				} else {
+					System.out.println("invalid watch token: " + token);
+					System.exit(0);
+				}
+				continue;
+			}
+			switch (token) {
+			case "-config":
+			case "-config-name":
+				wa.configName = requireValue(args, ++i, token);
+				break;
+			case "-source":
+				wa.source = requireValue(args, ++i, token);
+				break;
+			case "-f":
+				if (i + 1 < args.length && args[i + 1] != null && !args[i + 1].startsWith("-")) {
+					wa.file = args[++i];
+				} else {
+					wa.follow = true;
+				}
+				break;
+			case "-file":
+				wa.file = requireValue(args, ++i, token);
+				break;
+			case "-path":
+				wa.path = requireValue(args, ++i, token);
+				break;
+			case "-time":
+				wa.time1 = requireValue(args, ++i, token);
+				wa.time2 = requireValue(args, ++i, token);
+				break;
+			case "-name":
+				wa.name = requireValue(args, ++i, token);
+				break;
+			case "-tag":
+				wa.tag = requireValue(args, ++i, token);
+				break;
+			case "-head":
+				wa.head = parseIntArg(requireValue(args, ++i, token), token);
+				break;
+			case "-tail":
+				wa.tail = parseIntArg(requireValue(args, ++i, token), token);
+				break;
+			case "-n":
+				wa.tail = parseIntArg(requireValue(args, ++i, token), token);
+				break;
+			case "-csv":
+				wa.csv = true;
+				break;
+			case "-follow":
+			case "-F":
+				wa.follow = true;
+				break;
+			default:
+				System.out.println("invalid watch option: " + token);
+				System.exit(0);
+			}
+		}
+		return wa;
+	}
+
+	private static String requireValue(String[] args, int index, String flag) {
+		if (index >= args.length) {
+			System.out.println("missing value for " + flag);
+			System.exit(0);
+		}
+		return args[index];
+	}
+
+	private static void followWatch(WatchArgs wa, File logRoot, File configOverride) throws Exception {
+		if (wa.time1 != null || wa.time2 != null) {
+			System.out.println("follow mode does not support -time");
+			System.exit(0);
+		}
+		if (wa.head != null && wa.head > 0) {
+			System.out.println("follow mode does not support -head (use -tail)");
+			System.exit(0);
+		}
+		int tail = wa.tail == null || wa.tail <= 0 ? 20 : wa.tail;
+		File configDir = null;
+		File targetFile = null;
+		if (wa.file != null) {
+			targetFile = new File(wa.file);
+		} else {
+			if (configOverride != null) {
+				configDir = configOverride;
+			} else {
+				ConfigChoice choice = findBestConfigForSource(logRoot, wa.source);
+				if (choice == null) {
+					System.out.println("no log files found for source=" + wa.source);
+					return;
+				}
+				configDir = choice.configDir;
+				if (choice.multiple) {
+					System.out.println("using config: " + configDir.getName());
+				}
+			}
+			targetFile = findLatestLogFile(configDir, wa.source);
+		}
+		if (targetFile == null || !targetFile.exists()) {
+			String scope = configDir == null ? "" : (" (config " + configDir.getName() + ")");
+			System.out.println("log file not found for source=" + wa.source + scope);
+			return;
+		}
+
+		Gson gson = new GsonBuilder().setLenient().create();
+		List<String> lines = readLastLines(targetFile, tail);
+		boolean gColumn = true;
+		boolean matchSeen = false;
+		for (String line : lines) {
+			Data data = parseLogLine(line, gson);
+			if (data == null) {
+				continue;
+			}
+			Data filtered = filterData(data, wa);
+			if (filtered == null) {
+				continue;
+			}
+			matchSeen = true;
+			gColumn = printTable(filtered, gColumn, wa.csv);
+		}
+		if (isFilterActive(wa) && !matchSeen) {
+			printFilterError(wa);
+			System.exit(0);
+		}
+		followFile(targetFile, gson, wa, gColumn);
+	}
+
+	private static void followFile(File file, Gson gson, WatchArgs wa, boolean gColumn) throws Exception {
+		long pointer = 0L;
+		try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+			pointer = raf.length();
+			raf.seek(pointer);
+			while (true) {
+				String line = raf.readLine();
+				if (line == null) {
+					long len = raf.length();
+					if (len < pointer) {
+						raf.seek(0);
+						pointer = 0;
+					}
+					Thread.sleep(500);
+					continue;
+				}
+				pointer = raf.getFilePointer();
+				String decoded = new String(line.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+				Data data = parseLogLine(decoded, gson);
+				if (data == null) {
+					continue;
+				}
+				Data filtered = filterData(data, wa);
+				if (filtered == null) {
+					continue;
+				}
+				gColumn = printTable(filtered, gColumn, wa.csv);
+			}
+		}
+	}
+
+	private static List<String> readLastLines(File file, int maxLines) throws IOException {
+		List<String> lines = new ArrayList<>();
+		if (file == null || !file.exists() || maxLines <= 0) {
+			return lines;
+		}
+		try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+			long pointer = raf.length() - 1;
+			StringBuilder sb = new StringBuilder();
+			int lineCount = 0;
+			while (pointer >= 0 && lineCount < maxLines) {
+				raf.seek(pointer);
+				int read = raf.read();
+				if (read == '\n') {
+					if (sb.length() > 0) {
+						lines.add(sb.reverse().toString());
+						sb.setLength(0);
+						lineCount++;
+					}
+				} else if (read != '\r') {
+					sb.append((char) read);
+				}
+				pointer--;
+			}
+			if (sb.length() > 0 && lineCount < maxLines) {
+				lines.add(sb.reverse().toString());
+			}
+		}
+		Collections.reverse(lines);
+		return lines;
+	}
+
+	private static Data parseLogLine(String line, Gson gson) {
+		if (line == null) {
+			return null;
+		}
+		String trimmed = line.trim();
+		if (trimmed.isEmpty()) {
+			return null;
+		}
+		try {
+			return gson.fromJson(trimmed, Data.class);
+		} catch (com.google.gson.JsonSyntaxException e) {
+			return null;
+		}
+	}
+
+	private static boolean isFilterActive(WatchArgs wa) {
+		return wa != null && (wa.name != null || wa.tag != null);
+	}
+
+	private static void printFilterError(WatchArgs wa) {
+		if (wa == null) {
+			return;
+		}
+		if (wa.name != null) {
+			System.out.println("measure :" + wa.name + " is not valid");
+		} else if (wa.tag != null) {
+			System.out.println("tag :" + wa.tag + " is not valid");
+		}
+	}
+
+	private static Data filterData(Data data, WatchArgs wa) {
+		if (data == null || data.rc == null) {
+			return null;
+		}
+		if (wa == null || (wa.name == null && wa.tag == null)) {
+			return data;
+		}
+		ResultCommon[] rc = data.rc;
+		ResultCommon[] filtered = new ResultCommon[rc.length];
+		boolean any = false;
+		if (wa.name != null) {
+			for (int i = 0; i < rc.length; i++) {
+				if (rc[i] != null && wa.name.equals(rc[i].measure)) {
+					filtered[i] = rc[i];
+					any = true;
+				}
+			}
+		} else if (wa.tag != null) {
+			for (int i = 0; i < rc.length; i++) {
+				if (rc[i] != null && wa.tag.equals(rc[i].tag)) {
+					filtered[i] = rc[i];
+					any = true;
+				}
+			}
+		}
+		if (!any) {
+			return null;
+		}
+		return new Data(data.time, data.source, filtered);
+	}
+
+	private static void watchAllSources(File configDir, WatchArgs wa) throws Exception {
+		if (configDir == null) {
+			System.out.println("config not found");
+			return;
+		}
+		java.util.Map<String, LocalDate> latest = latestLogBySourceInConfig(configDir);
+		if (latest.isEmpty()) {
+			System.out.println("no sources found under: " + configDir.getPath());
+			return;
+		}
+		List<String> sources = new ArrayList<>(latest.keySet());
+		Collections.sort(sources);
+		String original = wa.source;
+		boolean first = true;
+		for (String source : sources) {
+			if (!first) {
+				System.out.println("");
+			}
+			first = false;
+			System.out.println("source: " + source);
+			wa.source = source;
+			watchSingleSource(wa, null, configDir, false);
+		}
+		wa.source = original;
+	}
+
+	private static boolean watchSingleSource(WatchArgs wa, File logRoot, File configOverride, boolean strict)
+			throws Exception {
+		List<File> logFiles = new ArrayList<>();
+		File configDir = configOverride;
+		if (wa.file != null) {
+			File target = new File(wa.file);
+			if (!target.exists()) {
+				System.out.println("log file not found: " + wa.file);
+				return false;
+			}
+			logFiles.add(target);
+		} else {
+			LocalDateTime stTs = null;
+			LocalDateTime edTs = null;
+			if (wa.time1 != null || wa.time2 != null) {
+				if (wa.time1 == null || wa.time2 == null) {
+					System.out.println("watch requires both start and end time");
+					System.exit(0);
+				}
+				stTs = stringToDate(wa.time1);
+				edTs = stringToDate(wa.time2);
+				if (edTs.isBefore(stTs)) {
+					System.out.println("invalid time range: end < start");
+					System.exit(0);
+				}
+			}
+			if (configDir == null) {
+				ConfigChoice choice = findBestConfigForSource(logRoot, wa.source);
+				if (choice == null) {
+					System.out.println("no log files found for source=" + wa.source);
+					return false;
+				}
+				configDir = choice.configDir;
+				if (choice.multiple) {
+					System.out.println("using config: " + configDir.getName());
+				}
+			}
+			logFiles = resolveLogFiles(configDir, wa.source, stTs, edTs);
+		}
+
+		if (logFiles.isEmpty()) {
+			String scope = configDir == null ? "" : (" (config " + configDir.getName() + ")");
+			System.out.println("no log files found for source=" + wa.source + scope);
+			return false;
+		}
+
+		int head = wa.head == null ? 0 : wa.head;
+		int tail = wa.tail == null ? 0 : wa.tail;
+		boolean hasRange = wa.time1 != null && wa.time2 != null;
+		if (head == 0 && tail == 0 && !hasRange) {
+			tail = 20;
+		}
+
+		Gson gson = new GsonBuilder().setLenient().create();
+		ReadLog rl = new ReadLog(logFiles, gson);
+		LinkedHashMap<LocalDateTime, ResultCommon[]> map = selectWatchMap(rl, wa, strict);
+		if (map == null) {
+			return false;
+		}
+		if (map.isEmpty()) {
+			if (strict) {
+				System.out.println("no data!");
+				System.exit(0);
+			} else {
+				System.out.println("no data for source=" + wa.source);
+				return false;
+			}
+		}
+		printTableMap(map, head, tail, wa.csv);
+		return true;
+	}
+
+	private static LinkedHashMap<LocalDateTime, ResultCommon[]> selectWatchMap(ReadLog rl, WatchArgs wa, boolean strict) {
+		if (wa.time1 != null && wa.time2 != null) {
+			LocalDateTime stTs = stringToDate(wa.time1);
+			LocalDateTime edTs = stringToDate(wa.time2);
+			rl.setRangeTimeMap(stTs, edTs);
+			return rl.rangeTimeMap;
+		}
+		if (wa.name != null) {
+			if (!hasMeasure(rl.timeMap, wa.name)) {
+				handleInvalidFilter(wa, strict);
+				return null;
+			}
+			rl.setNameMap(wa.name);
+			return rl.nameMap;
+		}
+		if (wa.tag != null) {
+			if (!hasTag(rl.timeMap, wa.tag)) {
+				handleInvalidFilter(wa, strict);
+				return null;
+			}
+			rl.setTagMap(wa.tag);
+			return rl.tagMap;
+		}
+		return rl.timeMap;
+	}
+
+	private static boolean hasMeasure(LinkedHashMap<LocalDateTime, ResultCommon[]> map, String name) {
+		if (map == null || name == null) {
+			return false;
+		}
+		for (ResultCommon[] values : map.values()) {
+			if (values == null) {
+				continue;
+			}
+			for (ResultCommon rc : values) {
+				if (rc != null && name.equals(rc.measure)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static boolean hasTag(LinkedHashMap<LocalDateTime, ResultCommon[]> map, String tag) {
+		if (map == null || tag == null) {
+			return false;
+		}
+		for (ResultCommon[] values : map.values()) {
+			if (values == null) {
+				continue;
+			}
+			for (ResultCommon rc : values) {
+				if (rc != null && tag.equals(rc.tag)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static void handleInvalidFilter(WatchArgs wa, boolean strict) {
+		printFilterError(wa);
+		if (strict) {
+			System.exit(0);
+		}
+	}
+
+	private static Integer parseIntArg(String value, String flag) {
+		try {
+			return Integer.parseInt(value);
+		} catch (NumberFormatException e) {
+			System.out.println("invalid number for " + flag + ": " + value);
+			System.exit(0);
+			return 0;
+		}
+	}
+
+	private static List<String> splitPath(String target) {
+		List<String> parts = new ArrayList<>();
+		if (target == null || target.trim().isEmpty()) {
+			return parts;
+		}
+		for (String part : target.split("/")) {
+			if (!part.isEmpty()) {
+				parts.add(part);
+			}
+		}
+		return parts;
+	}
+
+	private static void handleLsInConfig(File configDir, List<String> parts, String target) {
+		if (parts.isEmpty()) {
+			printConfigSources(configDir);
+			return;
+		}
+		validateSourceDir(parts.get(0));
+		if (parts.size() == 1) {
+			printSourceYearsInConfig(configDir, parts.get(0));
+			return;
+		}
+		if (parts.size() == 2) {
+			printSourceMonthsInConfig(configDir, parts.get(0), parts.get(1));
+			return;
+		}
+		if (parts.size() == 3) {
+			printSourceLogsInConfig(configDir, parts.get(0), parts.get(1), parts.get(2));
+			return;
+		}
+		System.out.println("invalid ls target: " + target);
+		CommandLineParser.printHelp();
+	}
+
+	private static void handleLsSourceOnly(File logRoot, List<String> parts, String target) {
+		validateSourceDir(parts.get(0));
+		if (parts.size() == 1) {
+			printSourceYearsGlobal(logRoot, parts.get(0));
+			return;
+		}
+		if (parts.size() == 2) {
+			printSourceMonthsGlobal(logRoot, parts.get(0), parts.get(1));
+			return;
+		}
+		if (parts.size() == 3) {
+			printSourceLogsGlobal(logRoot, parts.get(0), parts.get(1), parts.get(2));
+			return;
+		}
+		System.out.println("invalid ls target: " + target);
+		CommandLineParser.printHelp();
+	}
+
+	private static void printConfigList(File logRoot) {
+		List<File> configs = listConfigDirs(logRoot);
+		if (configs.isEmpty()) {
+			System.out.println("no configs found under: " + (logRoot == null ? "-" : logRoot.getPath()));
+			return;
+		}
+		configs.sort(Comparator.comparing(File::getName));
+		for (File configDir : configs) {
+			java.util.Map<String, LocalDate> latestBySource = latestLogBySourceInConfig(configDir);
+			LocalDate date = maxDate(latestBySource.values());
+			String dateStr = date == null ? "-" : date.toString();
+			String summary = formatSourceSummary(latestBySource.keySet(), 3);
+			System.out.println(dateStr + "  " + configDir.getName() + "/  " + summary);
+		}
+	}
+
+	private static void printConfigSources(File configDir) {
+		java.util.Map<String, LocalDate> latest = latestLogBySourceInConfig(configDir);
+		List<String> sources = new ArrayList<>(latest.keySet());
+		Collections.sort(sources);
+		for (String source : sources) {
+			LocalDate date = latest.get(source);
+			String dateStr = date == null ? "-" : date.toString();
+			System.out.println(dateStr + "  " + source + "/");
+		}
+		if (sources.isEmpty()) {
+			System.out.println("no sources found under: " + (configDir == null ? "-" : configDir.getPath()));
+		}
+	}
+
+	private static void printSourceYearsInConfig(File configDir, String source) {
+		List<String> years = listYearsForSourceInConfig(configDir, source);
+		if (years.isEmpty()) {
+			System.out.println("no logs for source: " + source);
+			return;
+		}
+		System.out.println(source + "/");
+		for (String year : years) {
+			System.out.println(year + "/");
+		}
+	}
+
+	private static void printSourceMonthsInConfig(File configDir, String source, String year) {
+		List<String> months = listMonthsForSourceInConfig(configDir, source, year);
+		if (months.isEmpty()) {
+			System.out.println("no logs for source: " + source + " year=" + year);
+			return;
+		}
+		System.out.println(source + "/" + year + "/");
+		for (String month : months) {
+			System.out.println(month + "/");
+		}
+	}
+
+	private static void printSourceLogsInConfig(File configDir, String source, String year, String month) {
+		List<File> logs = listLogsForSourceInConfig(configDir, source, year, month);
+		if (logs.isEmpty()) {
+			System.out.println("no logs for source: " + source + " " + year + "/" + month);
+			return;
+		}
+		for (File log : logs) {
+			LocalDate date = parseDateFromLogFile(log.getName());
+			String dateStr = date == null ? "-" : date.toString();
+			System.out.println(dateStr + "  " + log.getName());
+		}
+	}
+
+	private static void printSourceYearsGlobal(File logRoot, String source) {
+		List<String> years = listYearsForSourceGlobal(logRoot, source);
+		if (years.isEmpty()) {
+			System.out.println("no logs for source: " + source);
+			return;
+		}
+		System.out.println(source + "/");
+		for (String year : years) {
+			System.out.println(year + "/");
+		}
+	}
+
+	private static void printSourceMonthsGlobal(File logRoot, String source, String year) {
+		List<String> months = listMonthsForSourceGlobal(logRoot, source, year);
+		if (months.isEmpty()) {
+			System.out.println("no logs for source: " + source + " year=" + year);
+			return;
+		}
+		System.out.println(source + "/" + year + "/");
+		for (String month : months) {
+			System.out.println(month + "/");
+		}
+	}
+
+	private static void printSourceLogsGlobal(File logRoot, String source, String year, String month) {
+		List<LogEntry> entries = listLogsForSourceGlobal(logRoot, source, year, month);
+		if (entries.isEmpty()) {
+			System.out.println("no logs for source: " + source + " " + year + "/" + month);
+			return;
+		}
+		for (LogEntry entry : entries) {
+			String dateStr = entry.date == null ? "-" : entry.date.toString();
+			System.out.println(dateStr + "  " + entry.config + "/" + entry.file.getName());
+		}
+	}
+
+	private static java.util.Map<String, LocalDate> latestLogBySourceInConfig(File configDir) {
+		java.util.Map<String, LocalDate> latest = new java.util.HashMap<>();
+		if (configDir == null || !configDir.exists()) {
+			return latest;
+		}
+		File[] yearDirs = configDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{4}"));
+		if (yearDirs == null) {
+			return latest;
+		}
+		for (File yearDir : yearDirs) {
+			File[] monthDirs = yearDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{2}"));
+			if (monthDirs == null) {
+				continue;
+			}
+			for (File monthDir : monthDirs) {
+				File[] sourceDirs = monthDir.listFiles(File::isDirectory);
+				if (sourceDirs == null) {
+					continue;
+				}
+				for (File sourceDir : sourceDirs) {
+					File[] logs = sourceDir.listFiles(
+							file -> file.isFile() && file.getName().startsWith("log_") && file.getName().endsWith(".json"));
+					if (logs == null) {
+						continue;
+					}
+					for (File log : logs) {
+						LocalDate date = parseDateFromLogFile(log.getName());
+						if (date == null) {
+							continue;
+						}
+						String source = sourceDir.getName();
+						LocalDate current = latest.get(source);
+						if (current == null || date.isAfter(current)) {
+							latest.put(source, date);
+						}
+					}
+				}
+			}
+		}
+		return latest;
+	}
+
+	private static List<String> listYearsForSourceInConfig(File configDir, String source) {
+		Set<String> years = new TreeSet<>();
+		if (configDir == null || !configDir.exists()) {
+			return new ArrayList<>(years);
+		}
+		File[] yearDirs = configDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{4}"));
+		if (yearDirs == null) {
+			return new ArrayList<>(years);
+		}
+		for (File yearDir : yearDirs) {
+			if (hasSourceInYear(yearDir, source)) {
+				years.add(yearDir.getName());
+			}
+		}
+		return new ArrayList<>(years);
+	}
+
+	private static List<String> listMonthsForSourceInConfig(File configDir, String source, String year) {
+		Set<String> months = new TreeSet<>();
+		if (configDir == null || !configDir.exists()) {
+			return new ArrayList<>(months);
+		}
+		File yearDir = new File(configDir, year);
+		if (!yearDir.exists()) {
+			return new ArrayList<>(months);
+		}
+		File[] monthDirs = yearDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{2}"));
+		if (monthDirs == null) {
+			return new ArrayList<>(months);
+		}
+		for (File monthDir : monthDirs) {
+			File sourceDir = new File(monthDir, source);
+			if (sourceDir.exists()) {
+				months.add(monthDir.getName());
+			}
+		}
+		return new ArrayList<>(months);
+	}
+
+	private static List<File> listLogsForSourceInConfig(File configDir, String source, String year, String month) {
+		List<File> logs = new ArrayList<>();
+		if (configDir == null || !configDir.exists()) {
+			return logs;
+		}
+		File sourceDir = new File(configDir, year + "/" + month + "/" + source);
+		if (!sourceDir.exists()) {
+			return logs;
+		}
+		File[] files = sourceDir.listFiles(
+				file -> file.isFile() && file.getName().startsWith("log_") && file.getName().endsWith(".json"));
+		if (files != null) {
+			Collections.addAll(logs, files);
+			logs.sort(Comparator.comparing(File::getName));
+		}
+		return logs;
+	}
+
+	private static List<String> listYearsForSourceGlobal(File logRoot, String source) {
+		Set<String> years = new TreeSet<>();
+		for (File configDir : listConfigDirs(logRoot)) {
+			years.addAll(listYearsForSourceInConfig(configDir, source));
+		}
+		return new ArrayList<>(years);
+	}
+
+	private static List<String> listMonthsForSourceGlobal(File logRoot, String source, String year) {
+		Set<String> months = new TreeSet<>();
+		for (File configDir : listConfigDirs(logRoot)) {
+			months.addAll(listMonthsForSourceInConfig(configDir, source, year));
+		}
+		return new ArrayList<>(months);
+	}
+
+	private static List<LogEntry> listLogsForSourceGlobal(File logRoot, String source, String year, String month) {
+		List<LogEntry> entries = new ArrayList<>();
+		for (File configDir : listConfigDirs(logRoot)) {
+			List<File> logs = listLogsForSourceInConfig(configDir, source, year, month);
+			for (File log : logs) {
+				LogEntry entry = new LogEntry();
+				entry.config = configDir.getName();
+				entry.file = log;
+				entry.date = parseDateFromLogFile(log.getName());
+				entries.add(entry);
+			}
+		}
+		entries.sort((a, b) -> {
+			if (a.date == null && b.date == null) {
+				return a.config.compareTo(b.config);
+			}
+			if (a.date == null) {
+				return 1;
+			}
+			if (b.date == null) {
+				return -1;
+			}
+			int cmp = a.date.compareTo(b.date);
+			if (cmp != 0) {
+				return cmp;
+			}
+			return a.config.compareTo(b.config);
+		});
+		return entries;
+	}
+
+	private static boolean hasSourceInYear(File yearDir, String source) {
+		File[] monthDirs = yearDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{2}"));
+		if (monthDirs == null) {
+			return false;
+		}
+		for (File monthDir : monthDirs) {
+			File sourceDir = new File(monthDir, source);
+			if (sourceDir.exists()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static List<File> resolveLogFiles(File configDir, String source, LocalDateTime start, LocalDateTime end) {
+		List<File> files = new ArrayList<>();
+		if (configDir == null || source == null || source.trim().isEmpty()) {
+			return files;
+		}
+		if (start == null || end == null) {
+			File latest = findLatestLogFile(configDir, source);
+			if (latest != null) {
+				files.add(latest);
+			}
+			return files;
+		}
+		LocalDate cursor = start.toLocalDate();
+		LocalDate endDate = end.toLocalDate();
+		DateTimeFormatter ymd = DateTimeFormatter.BASIC_ISO_DATE;
+		while (!cursor.isAfter(endDate)) {
+			String year = String.format("%04d", cursor.getYear());
+			String month = String.format("%02d", cursor.getMonthValue());
+			String ymdStr = cursor.format(ymd);
+			File file = new File(configDir,
+					year + "/" + month + "/" + source + "/log_" + ymdStr + ".json");
+			if (file.exists()) {
+				files.add(file);
+			}
+			cursor = cursor.plusDays(1);
+		}
+		return files;
+	}
+
+	private static File findLatestLogFile(File configDir, String source) {
+		if (configDir == null || source == null || source.trim().isEmpty()) {
+			return null;
+		}
+		List<File> candidates = new ArrayList<>();
+		File[] yearDirs = configDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{4}"));
+		if (yearDirs == null) {
+			return null;
+		}
+		for (File yearDir : yearDirs) {
+			File[] monthDirs = yearDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{2}"));
+			if (monthDirs == null) {
+				continue;
+			}
+			for (File monthDir : monthDirs) {
+				File sourceDir = new File(monthDir, source);
+				if (!sourceDir.exists()) {
+					continue;
+				}
+				File[] logs = sourceDir.listFiles(
+						file -> file.isFile() && file.getName().startsWith("log_") && file.getName().endsWith(".json"));
+				if (logs != null) {
+					Collections.addAll(candidates, logs);
+				}
+			}
+		}
+		if (candidates.isEmpty()) {
+			return null;
+		}
+		return Collections.max(candidates, Comparator.comparing(File::getName));
+	}
+
+	private static ConfigChoice findBestConfigForSource(File logRoot, String source) {
+		List<File> configs = listConfigDirs(logRoot);
+		File best = null;
+		LocalDate bestDate = null;
+		int matches = 0;
+		for (File configDir : configs) {
+			LocalDate date = latestLogDateForSource(configDir, source);
+			if (date == null) {
+				continue;
+			}
+			matches++;
+			if (bestDate == null || date.isAfter(bestDate)) {
+				bestDate = date;
+				best = configDir;
+			}
+		}
+		if (best == null) {
+			return null;
+		}
+		ConfigChoice choice = new ConfigChoice();
+		choice.configDir = best;
+		choice.multiple = matches > 1;
+		choice.latestDate = bestDate;
+		return choice;
+	}
+
+	private static LocalDate latestLogDateForSource(File configDir, String source) {
+		LocalDate latest = null;
+		if (configDir == null || !configDir.exists()) {
+			return null;
+		}
+		File[] yearDirs = configDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{4}"));
+		if (yearDirs == null) {
+			return null;
+		}
+		for (File yearDir : yearDirs) {
+			File[] monthDirs = yearDir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{2}"));
+			if (monthDirs == null) {
+				continue;
+			}
+			for (File monthDir : monthDirs) {
+				File sourceDir = new File(monthDir, source);
+				if (!sourceDir.exists()) {
+					continue;
+				}
+				File[] logs = sourceDir.listFiles(
+						file -> file.isFile() && file.getName().startsWith("log_") && file.getName().endsWith(".json"));
+				if (logs == null) {
+					continue;
+				}
+				for (File log : logs) {
+					LocalDate date = parseDateFromLogFile(log.getName());
+					if (date == null) {
+						continue;
+					}
+					if (latest == null || date.isAfter(latest)) {
+						latest = date;
+					}
+				}
+			}
+		}
+		return latest;
+	}
+
+	private static List<File> listConfigDirs(File logRoot) {
+		List<File> configs = new ArrayList<>();
+		if (logRoot == null || !logRoot.exists()) {
+			return configs;
+		}
+		if (isConfigDir(logRoot)) {
+			configs.add(logRoot);
+			return configs;
+		}
+		File[] dirs = logRoot.listFiles(File::isDirectory);
+		if (dirs != null) {
+			for (File dir : dirs) {
+				if (isConfigDir(dir)) {
+					configs.add(dir);
+				}
+			}
+		}
+		return configs;
+	}
+
+	private static File findConfigDir(File logRoot, String name) {
+		if (logRoot == null || name == null || name.trim().isEmpty()) {
+			return null;
+		}
+		File candidate = new File(logRoot, name);
+		return isConfigDir(candidate) ? candidate : null;
+	}
+
+	private static boolean isConfigDir(File dir) {
+		if (dir == null || !dir.exists() || !dir.isDirectory()) {
+			return false;
+		}
+		if (hasConfigChildren(dir)) {
+			return false;
+		}
+		File cfg = new File(dir, "config.json");
+		if (cfg.exists()) {
+			return true;
+		}
+		File[] yearDirs = dir.listFiles(file -> file.isDirectory() && file.getName().matches("\\d{4}"));
+		return yearDirs != null && yearDirs.length > 0;
+	}
+
+	private static boolean hasConfigChildren(File dir) {
+		File[] dirs = dir.listFiles(File::isDirectory);
+		if (dirs == null) {
+			return false;
+		}
+		for (File child : dirs) {
+			File cfg = new File(child, "config.json");
+			if (cfg.exists()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static LocalDate parseDateFromLogFile(String name) {
+		if (name == null || !name.startsWith("log_") || !name.endsWith(".json")) {
+			return null;
+		}
+		String ymd = name.substring(4, name.length() - 5);
+		if (!ymd.matches("\\d{8}")) {
+			return null;
+		}
+		int year = Integer.parseInt(ymd.substring(0, 4));
+		int month = Integer.parseInt(ymd.substring(4, 6));
+		int day = Integer.parseInt(ymd.substring(6, 8));
+		return LocalDate.of(year, month, day);
+	}
+
+	private static LocalDate maxDate(java.util.Collection<LocalDate> dates) {
+		LocalDate latest = null;
+		if (dates == null) {
+			return null;
+		}
+		for (LocalDate date : dates) {
+			if (date == null) {
+				continue;
+			}
+			if (latest == null || date.isAfter(latest)) {
+				latest = date;
+			}
+		}
+		return latest;
+	}
+
+	private static String formatSourceSummary(java.util.Set<String> sources, int maxNames) {
+		if (sources == null || sources.isEmpty()) {
+			return "sources: -";
+		}
+		List<String> names = new ArrayList<>(sources);
+		Collections.sort(names);
+		StringBuilder sb = new StringBuilder("sources: ");
+		int count = names.size();
+		int limit = Math.min(maxNames, count);
+		for (int i = 0; i < limit; i++) {
+			if (i > 0) {
+				sb.append(", ");
+			}
+			sb.append(names.get(i));
+		}
+		if (count > limit) {
+			sb.append(" (+").append(count - limit).append(")");
+		}
+		return sb.toString();
+	}
+
+	private static class ConfigChoice {
+		File configDir;
+		boolean multiple;
+		LocalDate latestDate;
+	}
+
+	private static class LogEntry {
+		String config;
+		File file;
+		LocalDate date;
+	}
+
+	private static class WatchArgs {
+		String source;
+		String configName;
+		String file;
+		String path;
+		String time1;
+		String time2;
+		String tag;
+		String name;
+		Integer head;
+		Integer tail;
+		boolean csv;
+		String mode;
+		boolean follow;
+	}
+
+	private static class LsArgs {
+		String target;
+		String path;
 	}
 
 	private static boolean isVersionRequest(String[] args) {

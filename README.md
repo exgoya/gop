@@ -13,18 +13,18 @@ gop는 Database 모니터링을 위한 Console 도구입니다.
 1) 릴리즈에서 패키지 파일 다운로드
 ```
 # 예시 파일명
-# gop_1.0.0_amd64.deb
-# gop-1.0.0-1.x86_64.rpm
+# gop_1.0.1_amd64.deb
+# gop-1.0.1-1.x86_64.rpm
 ```
 
 2) 설치
 ```
 # DEB
-sudo dpkg -i gop_1.0.0_amd64.deb
+sudo dpkg -i gop_1.0.1_amd64.deb
 sudo apt -f install
 
 # RPM
-sudo rpm -ivh gop-1.0.0-1.x86_64.rpm
+sudo rpm -ivh gop-1.0.1-1.x86_64.rpm
 ```
 
 3) 확인
@@ -65,56 +65,90 @@ docker compose -f docker/docker-test.yml up -d
 
 ### 2) 모니터링 실행
 ```
-gop server -config data/config-mysql.json
+# 패키지 설치 시 (Linux)
+gop server -config /opt/gop/config/mysql.json
+
+# 소스 실행 시
+gop server -config conf/mysql.json
 ```
 
 ### 3) 콘솔 모드(run)
 ```
-gop run -config data/config-mysql.json -interval 1
+# 패키지 설치 시 (Linux)
+gop run -config /opt/gop/config/mysql.json -interval 1
+
+# 소스 실행 시
+gop run -config conf/mysql.json -interval 1
 ```
 
 ### 4) 로그 조회(watch)
 ```
-# 로그가 쌓인 후 실제 파일을 확인해서 경로를 지정
-# 예: data/config-mysql/2026/01/mysql-local/log_20260131.json
+# 로그 목록 확인
+gop ls
+gop ls <config>
+gop ls <config>/<source>/2024
 
-gop watch -config data/config-mysql.json -log <log_file> -head 5
+gop watch -config <config> -source <sourceId> -head 5
+gop watch -config <config>
+gop watch -config <config> -source <sourceId> tail -follow
 ```
 
 ## 명령어
 
 ```
-gop <server|run|watch> -config <config file path> [options]
+gop server -config <config file path> [options]
+gop run -config <config file path> [options]
+gop ls [<config>[/<source>[/YYYY[/MM]]]] [-path <log root>]
+gop watch [-config <config name>] [-source <sourceId>] [options]
 
 gop version
 ```
 
 - `server`: 수집 + 로그 저장 + API
 - `run`: 콘솔 출력 전용 (sar 스타일)
-- `watch`: 저장된 로그 조회
+- `watch`: 저장된 로그 조회 (자동 탐색)
+- `ls`: 로그 목록 탐색 (config/source/연/월)
+
+watch/ls 기본 로그 경로는 `data/`이며, 필요 시 `-path` 또는 `GOP_LOG_PATH` 환경변수로 변경할 수 있습니다.
+동일한 source가 여러 config에 있으면 watch는 가장 최신 로그가 있는 config를 사용합니다.
+`-follow`를 사용하면 tail -f처럼 로그가 추가될 때마다 계속 출력합니다.
+`-source`를 생략하면 해당 config의 모든 source를 순서대로 출력합니다.
 
 ## 로그 경로 규칙
 
-logPath 기준으로 `configId/연/월/source` 디렉터리를 생성합니다.
-`configId`가 없으면 config 파일명(확장자 제거)을 사용합니다.
+logPath 기준으로 `config/연/월/source` 디렉터리를 생성합니다.
+config 폴더명은 config 파일명(확장자 제외)입니다.
 
 예:
 ```
-data/prod/2026/01/mysql-local/log_20260131.json
+data/mysql/2026/01/mysql-local/log_20260131.json
 ```
 
 서버 실행 시 해당 경로에 `config.json`을 자동 복사합니다.
+같은 config 이름인데 내용이 다르면 기존 폴더를 백업하고 새 폴더를 생성합니다.
 
 ## Config
 
 정형 스키마 파일: `docs/config.schema.json`
 
 샘플 config:
-- `data/config-mysql.json`
-- `data/config-mariadb.json`
-- `data/config-postgres.json`
-- `data/config-oracle.json`
-- `data/config-multi.json`
+- 패키지 설치:
+  - `/opt/gop/config/config.json` (기본, MySQL)
+  - `/opt/gop/config/mysql.json`
+  - `/opt/gop/config/mariadb.json`
+  - `/opt/gop/config/postgres.json`
+  - `/opt/gop/config/oracle.json`
+  - `/opt/gop/config/multi.json`
+- 소스 실행:
+  - `conf/mysql.json`
+  - `conf/mariadb.json`
+  - `conf/postgres.json`
+  - `conf/oracle.json`
+  - `conf/multi.json`
+
+macOS/Windows 위치:
+- macOS: `/Applications/gop.app/Contents/app/config`
+- Windows: `C:\Program Files\gop\config`
 
 ### setting
 - `jdbcSource` (object, required)
@@ -123,7 +157,6 @@ data/prod/2026/01/mysql-local/log_20260131.json
   - `driverClass` (string, required): JDBC driver class
   - `jdbcProperties` (array, required): `{ name, value }` 목록
 - `source` (string, optional): source id (멀티 DB 구분)
-- `configId` (string, optional): 로그 경로 분리용 ID (없으면 config 파일명 사용)
 - `timeInterval` (int, required): polling interval (ms)
 - `consolePrint` (bool, required): 콘솔 출력 여부
 - `pageSize` (int|string, required): 헤더 반복 간격
@@ -219,9 +252,9 @@ POST http://127.0.0.1:18080/status
 docker compose -f docker/docker-test.yml up -d
 ```
 
-MySQL: `data/config-mysql.json` (port 3306)
-MariaDB: `data/config-mariadb.json` (port 3307)
-PostgreSQL: `data/config-postgres.json` (port 5432)
+MySQL: `conf/mysql.json` (source) / `/opt/gop/config/mysql.json` (package)
+MariaDB: `conf/mariadb.json` (source) / `/opt/gop/config/mariadb.json` (package)
+PostgreSQL: `conf/postgres.json` (source) / `/opt/gop/config/postgres.json` (package)
 
 종료:
 ```
