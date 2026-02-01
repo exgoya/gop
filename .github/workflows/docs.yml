@@ -8,6 +8,9 @@ on:
       - "README.md"
   release:
     types: [published]
+  workflow_run:
+    workflows: ["release"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
