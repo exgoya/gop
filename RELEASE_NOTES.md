@@ -1,3 +1,6 @@
+## v1.0.4 (2026-02-01)
+- Full Changelog: https://github.com/exgoya/gop/compare/v1.0.3...v1.0.4
+
 ## Highlights
 - 로그 탐색용 CLI 확장: `gop ls`, `gop watch` 개선
 - `watch -follow`로 tail -f 스타일 스트리밍 지원
