@@ -217,31 +217,29 @@ tasks.register('jpackagePkg', Exec) {
 }
 
 tasks.register('jpackageDeb', Exec) {
-    dependsOn 'prepareLinuxAppImage'
+    dependsOn 'shadowJar'
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
     doFirst {
         outputDir.mkdirs()
         requireOs('deb', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    def argsList = jpackageLinuxFromAppImage('deb', outputDir, resourceArgsFor(true)) + [
+    commandLine(jpackageCommand('deb', outputDir, resourceArgsFor(true)) + [
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
-    ]
-    commandLine(argsList)
+    ])
 }
 
 tasks.register('jpackageRpm', Exec) {
-    dependsOn 'prepareLinuxAppImage'
+    dependsOn 'shadowJar'
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
     doFirst {
         outputDir.mkdirs()
         requireOs('rpm', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    def argsList = jpackageLinuxFromAppImage('rpm', outputDir, resourceArgsFor(true)) + [
+    commandLine(jpackageCommand('rpm', outputDir, resourceArgsFor(true)) + [
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
-    ]
-    commandLine(argsList)
+    ])
 }
 
 tasks.register('jpackageMsi', Exec) {
