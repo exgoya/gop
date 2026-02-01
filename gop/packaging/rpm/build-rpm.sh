@@ -32,6 +32,14 @@ rm -rf "$APP_IMAGE_TARGET"
 mkdir -p "$APP_IMAGE_TARGET"
 cp -a "$APP_IMAGE_DIR"/. "$APP_IMAGE_TARGET"/
 
+RESOURCE_CONFIG_DIR="$(cd "$(dirname "$0")/../resources-linux/config" && pwd 2>/dev/null || true)"
+if [[ -n "${RESOURCE_CONFIG_DIR:-}" && -d "$RESOURCE_CONFIG_DIR" ]]; then
+  if [[ ! -d "$APP_IMAGE_TARGET/config" ]]; then
+    mkdir -p "$APP_IMAGE_TARGET/config"
+    cp -a "$RESOURCE_CONFIG_DIR"/. "$APP_IMAGE_TARGET/config/"
+  fi
+fi
+
 rpmbuild -bb "$SPEC_DST" \
   --define "_topdir $TOPDIR" \
   --define "_builddir $BUILD_DIR" \
