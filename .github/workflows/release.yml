@@ -42,7 +42,7 @@ jobs:
 
       - name: Install Linux packaging deps
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y rpm
+        run: sudo apt-get update && sudo apt-get install -y rpm rpm-build
 
       - name: Install WiX (Windows)
         if: runner.os == 'Windows'
@@ -87,7 +87,7 @@ jobs:
 
       - name: Build packages (Linux)
         if: runner.os == 'Linux'
-        run: ./gradlew -PreleaseVersion="${GITHUB_REF_NAME#v}" shadowDistZip jpackageLinux
+        run: ./gradlew -PreleaseVersion="${GITHUB_REF_NAME#v}" shadowDistZip jpackageLinuxAppImage
 
       - name: Normalize artifacts (Linux)
         if: runner.os == 'Linux'
@@ -109,6 +109,8 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
+          chmod +x gop/packaging/rpm/build-rpm.sh
+          gop/packaging/rpm/build-rpm.sh "${VERSION}" gop/build/jpackage/gop gop/build/rpm
           mkdir -p artifacts
           SHADOW_ZIP=$(ls gop/build/distributions/gop-shadow-*.zip gop/build/distributions/gop-shadow.zip 2>/dev/null | head -n 1)
           ALL_JAR=$(ls gop/build/libs/gop-*-all.jar gop/build/libs/gop-all.jar 2>/dev/null | head -n 1)
@@ -119,8 +121,10 @@ jobs:
           fi
           cp "$SHADOW_ZIP" "artifacts/gop-${VERSION}-linux-shadow.zip"
           cp "$ALL_JAR" "artifacts/gop-${VERSION}-linux-all.jar"
-          cp gop/build/jpackage/*.deb "artifacts/gop-${VERSION}-linux.deb"
-          cp gop/build/jpackage/*.rpm "artifacts/gop-${VERSION}-linux.rpm"
+          if ls gop/build/jpackage/*.deb >/dev/null 2>&1; then
+            cp gop/build/jpackage/*.deb "artifacts/gop-${VERSION}-linux.deb"
+          fi
+          cp gop/build/rpm/RPMS/*/*.rpm "artifacts/gop-${VERSION}-linux.rpm"
 
       - name: Build packages (Windows)
         if: runner.os == 'Windows'

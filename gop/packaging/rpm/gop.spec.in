@@ -1,0 +1,57 @@
+Name:           gop
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        Database monitoring console tool
+License:        Unknown
+URL:            https://github.com/exgoya/gop
+BuildArch:      x86_64
+
+%description
+Database monitoring console tool
+
+%prep
+
+%build
+
+%install
+rm -rf %{buildroot}
+mkdir -p %{buildroot}/opt/gop
+cp -a %{_builddir}/app-image/* %{buildroot}/opt/gop/
+find %{buildroot}/opt/gop -type d -print | sed "s#%{buildroot}##" | sed "s#^#%dir #"> %{buildroot}/filelist
+find %{buildroot}/opt/gop \( -type f -o -type l \) -print | sed "s#%{buildroot}##" >> %{buildroot}/filelist
+
+%post
+BIN="/opt/gop/bin/gop"
+LINK="/usr/local/bin/gop"
+CONFIG_SRC="/opt/gop/config"
+CONFIG_DST="/etc/gop"
+DATA_DIR="/var/lib/gop"
+LOG_DIR="/var/log/gop"
+
+mkdir -p "$CONFIG_DST" "$DATA_DIR" "$LOG_DIR"
+if [ -d "$CONFIG_SRC" ]; then
+  for f in "$CONFIG_SRC"/*.json; do
+    [ -f "$f" ] || continue
+    base="$(basename "$f")"
+    if [ ! -f "$CONFIG_DST/$base" ]; then
+      cp "$f" "$CONFIG_DST/$base"
+      chmod 0644 "$CONFIG_DST/$base" || true
+    fi
+  done
+fi
+if [ -x "$BIN" ]; then
+  mkdir -p "$(dirname "$LINK")"
+  ln -sf "$BIN" "$LINK"
+fi
+
+%postun
+BIN="/opt/gop/bin/gop"
+LINK="/usr/local/bin/gop"
+if [ -L "$LINK" ]; then
+  TARGET="$(readlink "$LINK")"
+  if [ "$TARGET" = "$BIN" ]; then
+    rm -f "$LINK"
+  fi
+fi
+
+%files -f %{buildroot}/filelist
