@@ -89,6 +89,7 @@ def jpackageResourceArgs = packagingResourcesDir.exists()
         : []
 def linuxPostInstall = layout.projectDirectory.file("packaging/scripts/linux-post-install.sh").asFile
 def linuxPostUninstall = layout.projectDirectory.file("packaging/scripts/linux-post-uninstall.sh").asFile
+def linuxAppImageDir = layout.buildDirectory.dir("jpackage/gop").get().asFile
 
 tasks.register('jpackageAppImage', Exec) {
     dependsOn 'shadowJar'
@@ -134,6 +135,60 @@ def requireOs = { String label, boolean ok ->
     }
 }
 
+def jpackageLinuxAppImageCommand = { File outputDir ->
+    [
+        jpackageExecutable(),
+        '--type', 'app-image',
+        '--input', layout.buildDirectory.dir("libs").get().asFile.absolutePath,
+        '--dest', outputDir.absolutePath,
+        '--name', 'gop',
+        '--main-jar', shadowJarFileName,
+        '--main-class', application.mainClass.get()
+    ]
+}
+
+def jpackageLinuxFromAppImage = { String type, File outputDir ->
+    [
+        jpackageExecutable(),
+        '--type', type,
+        '--app-image', linuxAppImageDir.absolutePath,
+        '--dest', outputDir.absolutePath,
+        '--name', 'gop',
+        '--vendor', 'exgoya',
+        '--description', 'Database monitoring console tool'
+    ]
+}
+
+tasks.register('jpackageLinuxAppImage', Exec) {
+    dependsOn 'shadowJar'
+    def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    doFirst {
+        outputDir.mkdirs()
+        requireOs('app-image', org.gradle.internal.os.OperatingSystem.current().isLinux())
+        if (linuxAppImageDir.exists()) {
+            linuxAppImageDir.deleteDir()
+        }
+    }
+    commandLine(jpackageLinuxAppImageCommand(outputDir))
+}
+
+tasks.register('prepareLinuxAppImage') {
+    dependsOn 'jpackageLinuxAppImage'
+    doLast {
+        if (packagingResourcesDir.exists()) {
+            File configDir = new File(packagingResourcesDir, "config")
+            if (configDir.exists()) {
+                File targetDir = new File(linuxAppImageDir, "config")
+                targetDir.mkdirs()
+                copy {
+                    from configDir
+                    into targetDir
+                }
+            }
+        }
+    }
+}
+
 tasks.register('jpackageDmg', Exec) {
     dependsOn 'shadowJar'
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
@@ -163,13 +218,13 @@ tasks.register('jpackagePkg', Exec) {
 }
 
 tasks.register('jpackageDeb', Exec) {
-    dependsOn 'shadowJar'
+    dependsOn 'prepareLinuxAppImage'
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
     doFirst {
         outputDir.mkdirs()
         requireOs('deb', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    def argsList = jpackageCommand('deb', outputDir) + [
+    def argsList = jpackageLinuxFromAppImage('deb', outputDir) + [
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
     ]
@@ -183,13 +238,13 @@ tasks.register('jpackageDeb', Exec) {
 }
 
 tasks.register('jpackageRpm', Exec) {
-    dependsOn 'shadowJar'
+    dependsOn 'prepareLinuxAppImage'
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
     doFirst {
         outputDir.mkdirs()
         requireOs('rpm', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    def argsList = jpackageCommand('rpm', outputDir) + [
+    def argsList = jpackageLinuxFromAppImage('rpm', outputDir) + [
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
     ]
