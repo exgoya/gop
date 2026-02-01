@@ -10,6 +10,10 @@ if [[ -z "$APP_IMAGE_DIR" || -z "$OUT_DIR" ]]; then
   exit 1
 fi
 
+mkdir -p "$OUT_DIR"
+OUT_DIR="$(cd "$OUT_DIR" && pwd)"
+APP_IMAGE_DIR="$(cd "$APP_IMAGE_DIR" && pwd)"
+
 TOPDIR="$OUT_DIR"
 SPECS_DIR="$TOPDIR/SPECS"
 BUILD_DIR="$TOPDIR/BUILD"
