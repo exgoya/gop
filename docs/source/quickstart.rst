@@ -16,7 +16,7 @@ This quickstart uses the bundled Docker compose to run MySQL locally.
 ::
 
    # Installed package (Linux)
-   gop server -config /opt/gop/config/mysql.json
+   gop server -config /etc/gop/mysql.json
 
    # Source checkout
    gop server -config conf/mysql.json
@@ -27,7 +27,7 @@ This quickstart uses the bundled Docker compose to run MySQL locally.
 ::
 
    # Installed package (Linux)
-   gop run -config /opt/gop/config/mysql.json -interval 1
+   gop run -config /etc/gop/mysql.json -interval 1
 
    # Source checkout
    gop run -config conf/mysql.json -interval 1

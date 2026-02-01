@@ -28,9 +28,13 @@ Notes
 - Installer builds must be produced on their target OS.
 - Sample configs are installed under:
 
-  - Linux: ``/opt/gop/config``
+  - Linux: ``/etc/gop``
   - macOS: ``/Applications/gop.app/Contents/app/config``
   - Windows: ``C:\Program Files\gop\config``
+
+- Linux default paths:
+  - Log data: ``/var/lib/gop``
+  - API log: ``/var/log/gop/api.log``
 
 APT/YUM repo (GitHub Pages)
 ---------------------------

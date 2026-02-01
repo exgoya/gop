@@ -83,10 +83,12 @@ def jpackageExecutable = {
     }.get().metadata.installationPath.file("bin/jpackage").asFile
 }
 
-def packagingResourcesDir = layout.projectDirectory.dir("packaging/resources").asFile
-def jpackageResourceArgs = packagingResourcesDir.exists()
-        ? ['--resource-dir', packagingResourcesDir.absolutePath]
-        : []
+def baseResourcesDir = layout.projectDirectory.dir("packaging/resources").asFile
+def linuxResourcesDir = layout.projectDirectory.dir("packaging/resources-linux").asFile
+def resourceArgsFor = { boolean linux ->
+    File dir = (linux && linuxResourcesDir.exists()) ? linuxResourcesDir : baseResourcesDir
+    return dir.exists() ? ['--resource-dir', dir.absolutePath] : []
+}
 def linuxPostInstall = layout.projectDirectory.file("packaging/scripts/linux-post-install.sh").asFile
 def linuxPostUninstall = layout.projectDirectory.file("packaging/scripts/linux-post-uninstall.sh").asFile
 def linuxAppImageDir = layout.buildDirectory.dir("jpackage/gop").get().asFile
@@ -101,7 +103,7 @@ tasks.register('jpackageAppImage', Exec) {
             appImage.deleteDir()
         }
     }
-    commandLine(
+    def argsList = [
         jpackageExecutable(),
         '--type', 'app-image',
         '--input', layout.buildDirectory.dir("libs").get().asFile.absolutePath,
@@ -109,13 +111,11 @@ tasks.register('jpackageAppImage', Exec) {
         '--name', 'gop',
         '--main-jar', shadowJarFileName,
         '--main-class', application.mainClass.get()
-    )
-    if (!jpackageResourceArgs.isEmpty()) {
-        args jpackageResourceArgs
-    }
+    ] + resourceArgsFor(false)
+    commandLine(argsList)
 }
 
-def jpackageCommand = { String type, File outputDir ->
+def jpackageCommand = { String type, File outputDir, List<String> resourceArgs ->
     [
         jpackageExecutable(),
         '--type', type,
@@ -126,7 +126,7 @@ def jpackageCommand = { String type, File outputDir ->
         '--main-class', application.mainClass.get(),
         '--vendor', 'exgoya',
         '--description', 'Database monitoring console tool'
-    ] + jpackageResourceArgs
+    ] + resourceArgs
 }
 
 def requireOs = { String label, boolean ok ->
@@ -135,7 +135,7 @@ def requireOs = { String label, boolean ok ->
     }
 }
 
-def jpackageLinuxAppImageCommand = { File outputDir ->
+def jpackageLinuxAppImageCommand = { File outputDir, List<String> resourceArgs ->
     [
         jpackageExecutable(),
         '--type', 'app-image',
@@ -144,7 +144,7 @@ def jpackageLinuxAppImageCommand = { File outputDir ->
         '--name', 'gop',
         '--main-jar', shadowJarFileName,
         '--main-class', application.mainClass.get()
-    ]
+    ] + resourceArgs
 }
 
 def jpackageLinuxFromAppImage = { String type, File outputDir ->
@@ -169,14 +169,15 @@ tasks.register('jpackageLinuxAppImage', Exec) {
             linuxAppImageDir.deleteDir()
         }
     }
-    commandLine(jpackageLinuxAppImageCommand(outputDir))
+    commandLine(jpackageLinuxAppImageCommand(outputDir, resourceArgsFor(true)))
 }
 
 tasks.register('prepareLinuxAppImage') {
     dependsOn 'jpackageLinuxAppImage'
     doLast {
-        if (packagingResourcesDir.exists()) {
-            File configDir = new File(packagingResourcesDir, "config")
+        File resourceRoot = linuxResourcesDir.exists() ? linuxResourcesDir : baseResourcesDir
+        if (resourceRoot.exists()) {
+            File configDir = new File(resourceRoot, "config")
             if (configDir.exists()) {
                 File targetDir = new File(linuxAppImageDir, "config")
                 targetDir.mkdirs()
@@ -196,7 +197,7 @@ tasks.register('jpackageDmg', Exec) {
         outputDir.mkdirs()
         requireOs('dmg', org.gradle.internal.os.OperatingSystem.current().isMacOsX())
     }
-    commandLine(jpackageCommand('dmg', outputDir) + [
+    commandLine(jpackageCommand('dmg', outputDir, resourceArgsFor(false)) + [
         '--app-version', releaseVersion,
         '--mac-app-category', 'public.app-category.developer-tools',
         '--mac-package-identifier', 'com.exgoya.gop'
@@ -210,7 +211,7 @@ tasks.register('jpackagePkg', Exec) {
         outputDir.mkdirs()
         requireOs('pkg', org.gradle.internal.os.OperatingSystem.current().isMacOsX())
     }
-    commandLine(jpackageCommand('pkg', outputDir) + [
+    commandLine(jpackageCommand('pkg', outputDir, resourceArgsFor(false)) + [
         '--app-version', releaseVersion,
         '--mac-app-category', 'public.app-category.developer-tools',
         '--mac-package-identifier', 'com.exgoya.gop'
@@ -264,7 +265,7 @@ tasks.register('jpackageMsi', Exec) {
         outputDir.mkdirs()
         requireOs('msi', org.gradle.internal.os.OperatingSystem.current().isWindows())
     }
-    commandLine(jpackageCommand('msi', outputDir) + [
+    commandLine(jpackageCommand('msi', outputDir, resourceArgsFor(false)) + [
         '--app-version', installerVersion
     ])
 }
@@ -293,8 +294,8 @@ tasks.named('test') {
 distributions {
     main {
         contents {
-            if (packagingResourcesDir.exists()) {
-                from(packagingResourcesDir)
+            if (baseResourcesDir.exists()) {
+                from(baseResourcesDir)
             }
         }
     }

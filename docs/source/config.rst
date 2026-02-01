@@ -17,17 +17,22 @@ A copy of the config is stored as ``config.json`` under that folder when
 server mode starts. If the same name exists but content differs, the
 existing folder is backed up before a new one is created.
 
+Linux package defaults:
+
+- ``fileLog.logPath`` = ``/var/lib/gop/``
+- ``api.logPath`` = ``/var/log/gop/api.log``
+
 Samples
 -------
 
 - Installed packages:
 
-  - ``/opt/gop/config/mysql.json`` (Linux)
-  - ``/opt/gop/config/mariadb.json``
-  - ``/opt/gop/config/postgres.json``
-  - ``/opt/gop/config/oracle.json``
-  - ``/opt/gop/config/multi.json``
-  - ``/opt/gop/config/config.json`` (default, MySQL)
+  - ``/etc/gop/mysql.json`` (Linux)
+  - ``/etc/gop/mariadb.json``
+  - ``/etc/gop/postgres.json``
+  - ``/etc/gop/oracle.json``
+  - ``/etc/gop/multi.json``
+  - ``/etc/gop/config.json`` (default, MySQL)
 
 - Source checkout:
 

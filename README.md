@@ -66,7 +66,7 @@ docker compose -f docker/docker-test.yml up -d
 ### 2) 모니터링 실행
 ```
 # 패키지 설치 시 (Linux)
-gop server -config /opt/gop/config/mysql.json
+gop server -config /etc/gop/mysql.json
 
 # 소스 실행 시
 gop server -config conf/mysql.json
@@ -75,7 +75,7 @@ gop server -config conf/mysql.json
 ### 3) 콘솔 모드(run)
 ```
 # 패키지 설치 시 (Linux)
-gop run -config /opt/gop/config/mysql.json -interval 1
+gop run -config /etc/gop/mysql.json -interval 1
 
 # 소스 실행 시
 gop run -config conf/mysql.json -interval 1
@@ -127,18 +127,22 @@ data/mysql/2026/01/mysql-local/log_20260131.json
 서버 실행 시 해당 경로에 `config.json`을 자동 복사합니다.
 같은 config 이름인데 내용이 다르면 기존 폴더를 백업하고 새 폴더를 생성합니다.
 
+Linux 패키지 기본값:
+- `fileLog.logPath`: `/var/lib/gop/`
+- `api.logPath`: `/var/log/gop/api.log`
+
 ## Config
 
 정형 스키마 파일: `docs/config.schema.json`
 
 샘플 config:
 - 패키지 설치:
-  - `/opt/gop/config/config.json` (기본, MySQL)
-  - `/opt/gop/config/mysql.json`
-  - `/opt/gop/config/mariadb.json`
-  - `/opt/gop/config/postgres.json`
-  - `/opt/gop/config/oracle.json`
-  - `/opt/gop/config/multi.json`
+  - `/etc/gop/config.json` (기본, MySQL)
+  - `/etc/gop/mysql.json`
+  - `/etc/gop/mariadb.json`
+  - `/etc/gop/postgres.json`
+  - `/etc/gop/oracle.json`
+  - `/etc/gop/multi.json`
 - 소스 실행:
   - `conf/mysql.json`
   - `conf/mariadb.json`
@@ -252,9 +256,9 @@ POST http://127.0.0.1:18080/status
 docker compose -f docker/docker-test.yml up -d
 ```
 
-MySQL: `conf/mysql.json` (source) / `/opt/gop/config/mysql.json` (package)
-MariaDB: `conf/mariadb.json` (source) / `/opt/gop/config/mariadb.json` (package)
-PostgreSQL: `conf/postgres.json` (source) / `/opt/gop/config/postgres.json` (package)
+MySQL: `conf/mysql.json` (source) / `/etc/gop/mysql.json` (package)
+MariaDB: `conf/mariadb.json` (source) / `/etc/gop/mariadb.json` (package)
+PostgreSQL: `conf/postgres.json` (source) / `/etc/gop/postgres.json` (package)
 
 종료:
 ```
