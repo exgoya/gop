@@ -17,8 +17,9 @@ Database monitoring console tool
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/opt/gop
 cp -a %{_builddir}/app-image/* %{buildroot}/opt/gop/
-find %{buildroot}/opt/gop -type d -print | sed "s#%{buildroot}##" | sed "s#^#%dir #"> %{buildroot}/filelist
-find %{buildroot}/opt/gop \( -type f -o -type l \) -print | sed "s#%{buildroot}##" >> %{buildroot}/filelist
+FILELIST="%{_builddir}/gop.filelist"
+find %{buildroot}/opt/gop -type d -print | sed "s#%{buildroot}##" | sed "s#^#%dir #" > "$FILELIST"
+find %{buildroot}/opt/gop \( -type f -o -type l \) -print | sed "s#%{buildroot}##" >> "$FILELIST"
 
 %post
 BIN="/opt/gop/bin/gop"
@@ -54,4 +55,4 @@ if [ -L "$LINK" ]; then
   fi
 fi
 
-%files -f %{buildroot}/filelist
+%files -f %{_builddir}/gop.filelist
