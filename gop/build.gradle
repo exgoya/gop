@@ -219,26 +219,34 @@ tasks.register('jpackagePkg', Exec) {
 tasks.register('jpackageDeb', Exec) {
     dependsOn 'shadowJar'
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    def postInstall = layout.projectDirectory.file("packaging/scripts/linux-post-install.sh").asFile
+    def postUninstall = layout.projectDirectory.file("packaging/scripts/linux-post-uninstall.sh").asFile
     doFirst {
         outputDir.mkdirs()
         requireOs('deb', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
     commandLine(jpackageCommand('deb', outputDir, resourceArgsFor(true)) + [
         '--app-version', releaseVersion,
-        '--linux-app-category', 'Development;System;'
+        '--linux-app-category', 'Development;System;',
+        '--linux-post-install', postInstall.absolutePath,
+        '--linux-post-uninstall', postUninstall.absolutePath
     ])
 }
 
 tasks.register('jpackageRpm', Exec) {
     dependsOn 'shadowJar'
     def outputDir = layout.buildDirectory.dir("jpackage").get().asFile
+    def postInstall = layout.projectDirectory.file("packaging/scripts/linux-post-install.sh").asFile
+    def postUninstall = layout.projectDirectory.file("packaging/scripts/linux-post-uninstall.sh").asFile
     doFirst {
         outputDir.mkdirs()
         requireOs('rpm', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
     commandLine(jpackageCommand('rpm', outputDir, resourceArgsFor(true)) + [
         '--app-version', releaseVersion,
-        '--linux-app-category', 'Development;System;'
+        '--linux-app-category', 'Development;System;',
+        '--linux-post-install', postInstall.absolutePath,
+        '--linux-post-uninstall', postUninstall.absolutePath
     ])
 }
 
