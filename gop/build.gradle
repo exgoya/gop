@@ -145,7 +145,7 @@ def jpackageLinuxAppImageCommand = { File outputDir, List<String> resourceArgs -
     ] + resourceArgs
 }
 
-def jpackageLinuxFromAppImage = { String type, File outputDir ->
+def jpackageLinuxFromAppImage = { String type, File outputDir, List<String> resourceArgs ->
     [
         jpackageExecutable(),
         '--type', type,
@@ -154,7 +154,7 @@ def jpackageLinuxFromAppImage = { String type, File outputDir ->
         '--name', 'gop',
         '--vendor', 'exgoya',
         '--description', 'Database monitoring console tool'
-    ]
+    ] + resourceArgs
 }
 
 tasks.register('jpackageLinuxAppImage', Exec) {
@@ -223,7 +223,7 @@ tasks.register('jpackageDeb', Exec) {
         outputDir.mkdirs()
         requireOs('deb', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    def argsList = jpackageLinuxFromAppImage('deb', outputDir) + [
+    def argsList = jpackageLinuxFromAppImage('deb', outputDir, resourceArgsFor(true)) + [
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
     ]
@@ -237,7 +237,7 @@ tasks.register('jpackageRpm', Exec) {
         outputDir.mkdirs()
         requireOs('rpm', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    def argsList = jpackageLinuxFromAppImage('rpm', outputDir) + [
+    def argsList = jpackageLinuxFromAppImage('rpm', outputDir, resourceArgsFor(true)) + [
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
     ]
