@@ -87,6 +87,8 @@ def packagingResourcesDir = layout.projectDirectory.dir("packaging/resources").a
 def jpackageResourceArgs = packagingResourcesDir.exists()
         ? ['--resource-dir', packagingResourcesDir.absolutePath]
         : []
+def linuxPostInstall = layout.projectDirectory.file("packaging/scripts/linux-post-install.sh").asFile
+def linuxPostUninstall = layout.projectDirectory.file("packaging/scripts/linux-post-uninstall.sh").asFile
 
 tasks.register('jpackageAppImage', Exec) {
     dependsOn 'shadowJar'
@@ -167,10 +169,17 @@ tasks.register('jpackageDeb', Exec) {
         outputDir.mkdirs()
         requireOs('deb', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    commandLine(jpackageCommand('deb', outputDir) + [
+    def argsList = jpackageCommand('deb', outputDir) + [
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
-    ])
+    ]
+    if (linuxPostInstall.exists()) {
+        argsList += ['--linux-post-install', linuxPostInstall.absolutePath]
+    }
+    if (linuxPostUninstall.exists()) {
+        argsList += ['--linux-post-uninstall', linuxPostUninstall.absolutePath]
+    }
+    commandLine(argsList)
 }
 
 tasks.register('jpackageRpm', Exec) {
@@ -180,10 +189,17 @@ tasks.register('jpackageRpm', Exec) {
         outputDir.mkdirs()
         requireOs('rpm', org.gradle.internal.os.OperatingSystem.current().isLinux())
     }
-    commandLine(jpackageCommand('rpm', outputDir) + [
+    def argsList = jpackageCommand('rpm', outputDir) + [
         '--app-version', releaseVersion,
         '--linux-app-category', 'Development;System;'
-    ])
+    ]
+    if (linuxPostInstall.exists()) {
+        argsList += ['--linux-post-install', linuxPostInstall.absolutePath]
+    }
+    if (linuxPostUninstall.exists()) {
+        argsList += ['--linux-post-uninstall', linuxPostUninstall.absolutePath]
+    }
+    commandLine(argsList)
 }
 
 tasks.register('jpackageMsi', Exec) {
