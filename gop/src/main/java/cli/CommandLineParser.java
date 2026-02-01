@@ -76,6 +76,7 @@ public class CommandLineParser {
 		System.out.println(" gop run -config <config file path> [options]");
 		System.out.println(" gop ls [<config>[/<source>[/YYYY[/MM]]]] [-path <log root>]");
 		System.out.println(" gop watch [-config <config name>] [-source <sourceId>] [tail] [options]");
+		System.out.println(" gop init");
 		System.out.println(" gop version | gop -version");
 		System.out.println(" ");
 		System.out.println(" run option:");
@@ -106,6 +107,7 @@ public class CommandLineParser {
 		System.out.println(" sample use");
 		System.out.println(" gop server -config /opt/gop/config/mysql.json");
 		System.out.println(" gop run -config /opt/gop/config/mysql.json");
+		System.out.println(" gop init");
 		System.out.println(
 				" gop ls");
 		System.out.println(
