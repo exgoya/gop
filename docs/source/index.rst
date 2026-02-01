@@ -19,6 +19,7 @@ Features
    commands
    config
    spec
+   releases
    api
    packaging
    development
