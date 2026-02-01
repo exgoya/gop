@@ -46,12 +46,14 @@ if [ -x "$BIN" ]; then
 fi
 
 %postun
-BIN="/opt/gop/bin/gop"
-LINK="/usr/local/bin/gop"
-if [ -L "$LINK" ]; then
-  TARGET="$(readlink "$LINK")"
-  if [ "$TARGET" = "$BIN" ]; then
-    rm -f "$LINK"
+if [ "$1" -eq 0 ]; then
+  BIN="/opt/gop/bin/gop"
+  LINK="/usr/local/bin/gop"
+  if [ -L "$LINK" ]; then
+    TARGET="$(readlink "$LINK")"
+    if [ "$TARGET" = "$BIN" ]; then
+      rm -f "$LINK"
+    fi
   fi
 fi
 
