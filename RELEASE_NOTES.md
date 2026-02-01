@@ -1,3 +1,6 @@
+## v1.0.14 (2026-02-01)
+- Full Changelog: https://github.com/exgoya/gop/compare/v1.0.13...v1.0.14
+
 ## v1.0.13 (2026-02-01)
 - Full Changelog: https://github.com/exgoya/gop/compare/v1.0.12...v1.0.13
 
