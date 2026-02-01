@@ -45,6 +45,14 @@ if [ -x "$BIN" ]; then
   ln -sf "$BIN" "$LINK"
 fi
 
+%posttrans
+BIN="/opt/gop/bin/gop"
+LINK="/usr/local/bin/gop"
+if [ -x "$BIN" ]; then
+  mkdir -p "$(dirname "$LINK")"
+  ln -sf "$BIN" "$LINK"
+fi
+
 %postun
 if [ "$1" -eq 0 ]; then
   BIN="/opt/gop/bin/gop"
