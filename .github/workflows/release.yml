@@ -176,6 +176,40 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Update release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          DATE="$(date -u +%Y-%m-%d)"
+          git fetch origin main
+          git fetch --tags
+          git checkout main
+          if ! grep -q "^## v${VERSION}" RELEASE_NOTES.md; then
+            PREV_TAG="$(git tag --sort=-v:refname | sed -n '2p')"
+            CHANGELOG=""
+            if [ -n "$PREV_TAG" ]; then
+              CHANGELOG="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+            fi
+            tmp="$(mktemp)"
+            {
+              echo "## v${VERSION} (${DATE})"
+              if [ -n "$CHANGELOG" ]; then
+                echo "- Full Changelog: ${CHANGELOG}"
+              else
+                echo "- Full Changelog: (first release)"
+              fi
+              echo
+              cat RELEASE_NOTES.md
+            } > "$tmp"
+            mv "$tmp" RELEASE_NOTES.md
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add RELEASE_NOTES.md
+            git commit -m "Add release notes for v${VERSION}"
+            git push origin main
+          fi
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
