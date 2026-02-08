@@ -367,6 +367,7 @@ public final class ApiServer {
 		source.source = config.setting.source == null ? "default" : config.setting.source;
 		source.jdbcSource = config.setting.jdbcSource;
 		source.measure = config.measure;
+		source.measureV2 = config.measureV2;
 		return source;
 	}
 }

@@ -8,28 +8,39 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import model.ActionV2;
 import model.Config;
 import model.Data;
+import model.Measure;
+import model.MeasureV2;
 import model.ResultCommon;
+import model.RuleV2;
 import model.SourceConfig;
+import model.TargetV2;
 import api.ApiServer;
 import config.ConfigManager;
 import db.Database;
 import io.ReadLog;
+import io.ReadOs;
 import cli.CommandLineParser;
 import log.CRetention;
 import run.RunOutputFormatter;
@@ -41,6 +52,7 @@ import log.FileLogService;
 
 public class Gop {
 	private static final Object PRINT_LOCK = new Object();
+	private static final java.util.concurrent.ConcurrentHashMap<String, Long> V2_PREVIOUS_VALUES = new java.util.concurrent.ConcurrentHashMap<>();
 
 	public static void main(String[] args) throws Exception {
 		new Gop().startApp(args);
@@ -1309,9 +1321,12 @@ public class Gop {
 		}
 
 		System.out.println("Source : " + (source.source == null ? "-" : source.source));
-		System.out.println("Source jdbc url : " + source.jdbcSource.url);
-		System.out.println("Write file : " + config.setting.fileLog.enable);
-		System.out.println("Write file path : " + config.setting.fileLog.logPath);
+		String jdbcUrl = source.jdbcSource == null ? "-" : source.jdbcSource.url;
+		System.out.println("Source jdbc url : " + jdbcUrl);
+		boolean writeFile = config.setting != null && config.setting.fileLog != null && config.setting.fileLog.enable;
+		String filePath = config.setting == null || config.setting.fileLog == null ? "-" : config.setting.fileLog.logPath;
+		System.out.println("Write file : " + writeFile);
+		System.out.println("Write file path : " + filePath);
 	}
 
 	private static void printTableMap(LinkedHashMap<LocalDateTime, ResultCommon[]> rangeTimeMap, int head, int tail, Boolean printCSV) {
@@ -1397,12 +1412,7 @@ public class Gop {
 	}
 
 	private void startMonitoring(Config config, Gson gson, boolean runOnce, boolean allowPrint, boolean allowFileLog) throws Exception {
-		SourceConfig[] sources;
-		if (config.sources != null && config.sources.length > 0) {
-			sources = config.sources;
-		} else {
-			sources = new SourceConfig[] { buildSingleSource(config) };
-		}
+		SourceConfig[] sources = resolveSources(config);
 		if (runOnce) {
 			java.util.concurrent.ConcurrentHashMap<String, Data> results = new java.util.concurrent.ConcurrentHashMap<>();
 			Thread[] threads = new Thread[sources.length];
@@ -1449,12 +1459,7 @@ public class Gop {
 	}
 
 	private void runLoop(Config config, Gson gson, boolean showInfo) throws Exception {
-		SourceConfig[] sources;
-		if (config.sources != null && config.sources.length > 0) {
-			sources = config.sources;
-		} else {
-			sources = new SourceConfig[] { buildSingleSource(config) };
-		}
+		SourceConfig[] sources = resolveSources(config);
 		if (showInfo) {
 			for (SourceConfig source : sources) {
 				printInfo(source, config);
@@ -1492,17 +1497,28 @@ public class Gop {
 		}
 	}
 
+	private static SourceConfig[] resolveSources(Config config) {
+		if (config.sources != null && config.sources.length > 0) {
+			return config.sources;
+		}
+		return new SourceConfig[] { buildSingleSource(config) };
+	}
 
 	private static SourceConfig buildSingleSource(Config config) {
 		SourceConfig source = new SourceConfig();
 		source.source = config.setting.source == null ? "default" : config.setting.source;
 		source.jdbcSource = config.setting.jdbcSource;
 		source.measure = config.measure;
+		source.measureV2 = config.measureV2;
 		return source;
 	}
 
 	private static void gStampLog(Config config, SourceConfig source, Gson gson, boolean runOnce, boolean allowPrint, boolean allowFileLog)
 			throws Exception {
+		if (isV2Source(source)) {
+			gStampLogV2(config, source, gson, runOnce, allowPrint, allowFileLog);
+			return;
+		}
 
 		// db
 		Database db = new Database(source.jdbcSource, source.measure, source.source);
@@ -1568,6 +1584,9 @@ public class Gop {
 	}
 
 	private static Data collectOnce(Config config, SourceConfig source, Gson gson) throws Exception {
+		if (isV2Source(source)) {
+			return collectOnceV2(source);
+		}
 		Database db = new Database(source.jdbcSource, source.measure, source.source);
 		Database.ConnAndStmt cas = db.createConAndPstmtWithConnection();
 		Data data = null;
@@ -1596,6 +1615,9 @@ public class Gop {
 
 	private static Data collectOnceReuse(Config config, SourceConfig source, Gson gson,
 			java.util.concurrent.ConcurrentHashMap<String, Database.ConnAndStmt> connCache) throws Exception {
+		if (isV2Source(source)) {
+			return collectOnceV2(source);
+		}
 		Database db = new Database(source.jdbcSource, source.measure, source.source);
 		String key = source.source == null ? "default" : source.source;
 		Database.ConnAndStmt cas = connCache.get(key);
@@ -1636,6 +1658,291 @@ public class Gop {
 		}
 	}
 
+	private static boolean isV2Source(SourceConfig source) {
+		return source != null && source.measureV2 != null && source.measureV2.length > 0;
+	}
+
+	private static void gStampLogV2(Config config, SourceConfig source, Gson gson, boolean runOnce, boolean allowPrint,
+			boolean allowFileLog) throws Exception {
+		int printRow = 0;
+		boolean gColumn = true;
+
+		while (true) {
+			Data data = null;
+			int retry = 0;
+			do {
+				data = collectOnceV2(source);
+				if (data != null) {
+					break;
+				}
+				System.out.println("collectOnceV2 error retry cnt : " + retry);
+				retry++;
+				Thread.sleep(1000);
+			} while (data == null);
+
+			if (allowFileLog && config.setting != null && config.setting.fileLog != null && config.setting.fileLog.enable) {
+				FileLogService.writeJson(data, gson, config, null);
+			}
+			if (allowPrint && config.setting != null && config.setting.consolePrint) {
+				gColumn = printTable(data, gColumn, config.setting.printCSV);
+				printRow++;
+				if (config.setting.pageSize > 0 && printRow % config.setting.pageSize == 0) {
+					gColumn = true;
+				}
+			}
+
+			if (runOnce) {
+				break;
+			}
+			Thread.sleep(config.setting.timeInterval);
+		}
+	}
+
+	private static Data collectOnceV2(SourceConfig source) throws Exception {
+		List<ResultCommon> resultList = new ArrayList<>();
+		String sourceId = source.source == null ? "default" : source.source;
+		DateTimeFormatter formatDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+		String sysTimestamp = formatDateTime.format(LocalDateTime.now());
+
+		boolean needsDb = false;
+		for (MeasureV2 measure : source.measureV2) {
+			if (measure != null && !measure.sqlIsOs && measure.sql != null && !measure.sql.trim().isEmpty()) {
+				needsDb = true;
+				break;
+			}
+		}
+		if (!needsDb) {
+			for (MeasureV2 measure : source.measureV2) {
+				if (measure == null || measure.sql == null || measure.sql.trim().isEmpty()) {
+					continue;
+				}
+				Map<String, TargetV2> targetMap = buildTargetMap(measure.targets);
+				long rawValue = parseLong(ReadOs.executeS(measure.sql));
+				processV2Row(sourceId, measure, null, rawValue, targetMap, resultList);
+			}
+			return new Data(sysTimestamp, sourceId, resultList.toArray(new ResultCommon[0]));
+		}
+		if (source.jdbcSource == null) {
+			System.out.println("invalid source config: jdbcSource is required for SQL measureV2 (" + sourceId + ")");
+			System.exit(0);
+		}
+
+		Database db = new Database(source.jdbcSource, new Measure[0], source.source);
+		try (Connection con = db.createConnection()) {
+			for (MeasureV2 measure : source.measureV2) {
+				if (measure == null || measure.sql == null || measure.sql.trim().isEmpty()) {
+					continue;
+				}
+				Map<String, TargetV2> targetMap = buildTargetMap(measure.targets);
+				if (measure.sqlIsOs) {
+					long rawValue = parseLong(ReadOs.executeS(measure.sql));
+					processV2Row(sourceId, measure, null, rawValue, targetMap, resultList);
+					continue;
+				}
+				try (PreparedStatement pstmt = con.prepareStatement(measure.sql);
+						ResultSet rs = pstmt.executeQuery()) {
+					while (rs.next()) {
+						String targetKey = readTargetKey(rs, measure);
+						long rawValue = readLongValue(rs, measure);
+						processV2Row(sourceId, measure, targetKey, rawValue, targetMap, resultList);
+					}
+				}
+			}
+		}
+		return new Data(sysTimestamp, sourceId, resultList.toArray(new ResultCommon[0]));
+	}
+
+	private static Map<String, TargetV2> buildTargetMap(TargetV2[] targets) {
+		Map<String, TargetV2> map = new HashMap<>();
+		if (targets == null) {
+			return map;
+		}
+		for (TargetV2 target : targets) {
+			if (target == null || target.target == null || target.target.trim().isEmpty()) {
+				continue;
+			}
+			map.put(target.target.trim(), target);
+		}
+		return map;
+	}
+
+	private static String readTargetKey(ResultSet rs, MeasureV2 measure) throws SQLException {
+		String targetColumn = measure.targetColumn;
+		if (targetColumn != null && !targetColumn.trim().isEmpty()) {
+			return rs.getString(targetColumn.trim());
+		}
+		try {
+			return rs.getString(1);
+		} catch (SQLException ignored) {
+			return null;
+		}
+	}
+
+	private static long readLongValue(ResultSet rs, MeasureV2 measure) throws SQLException {
+		String valueColumn = measure.valueColumn;
+		if (valueColumn != null && !valueColumn.trim().isEmpty()) {
+			long val = rs.getLong(valueColumn.trim());
+			return rs.wasNull() ? 0L : val;
+		}
+		try {
+			long val = rs.getLong(2);
+			if (!rs.wasNull()) {
+				return val;
+			}
+		} catch (SQLException ignored) {
+		}
+		long val = rs.getLong(1);
+		return rs.wasNull() ? 0L : val;
+	}
+
+	private static void processV2Row(String sourceId, MeasureV2 measure, String targetKey, long rawValue,
+			Map<String, TargetV2> targetMap, List<ResultCommon> resultList) {
+		TargetV2 targetCfg = null;
+		if (targetKey != null && !targetKey.trim().isEmpty()) {
+			targetCfg = targetMap.get(targetKey.trim());
+		}
+		if (targetCfg == null && targetMap.size() == 1) {
+			targetCfg = targetMap.values().iterator().next();
+		}
+
+		String measureName;
+		String viewMode = "raw";
+		String tag = measure.defaultTag;
+		RuleV2[] rules = null;
+		String normalizedTarget = targetKey == null ? null : targetKey.trim();
+
+		if (targetCfg != null) {
+			measureName = firstNonBlank(targetCfg.measure, normalizedTarget, measure.name);
+			viewMode = firstNonBlank(targetCfg.viewMode, "raw");
+			tag = firstNonBlank(targetCfg.tag, measure.defaultTag);
+			rules = targetCfg.rules;
+		} else if (targetMap.isEmpty()) {
+			measureName = firstNonBlank(normalizedTarget, measure.name);
+		} else {
+			return;
+		}
+
+		if (measureName == null || measureName.trim().isEmpty()) {
+			return;
+		}
+		long value = applyViewMode(sourceId, measureName, rawValue, viewMode);
+		boolean alert = evaluateRulesAndRunActions(sourceId, measureName, value, rules);
+		resultList.add(new ResultCommon(measureName, value, tag, alert));
+	}
+
+	private static long applyViewMode(String sourceId, String measureName, long rawValue, String viewMode) {
+		String mode = viewMode == null ? "raw" : viewMode.trim().toLowerCase();
+		if ("delta".equals(mode)) {
+			String key = sourceId + "|" + measureName;
+			Long prev = V2_PREVIOUS_VALUES.put(key, rawValue);
+			return prev == null ? 0L : rawValue - prev;
+		}
+		return rawValue;
+	}
+
+	private static boolean evaluateRulesAndRunActions(String sourceId, String measureName, long value, RuleV2[] rules) {
+		if (rules == null || rules.length == 0) {
+			return false;
+		}
+		boolean alert = false;
+		for (RuleV2 rule : rules) {
+			if (rule == null) {
+				continue;
+			}
+			if (!matchRule(rule, value)) {
+				continue;
+			}
+			if (rule.actions == null || rule.actions.length == 0) {
+				alert = true;
+				continue;
+			}
+			for (ActionV2 action : rule.actions) {
+				if (action == null || action.type == null) {
+					continue;
+				}
+				String actionType = action.type.trim().toLowerCase();
+				if ("alert".equals(actionType)) {
+					alert = true;
+					continue;
+				}
+				if ("script".equals(actionType)) {
+					runScriptAction(action);
+					continue;
+				}
+				if ("notify".equals(actionType)) {
+					String msg = formatNotifyMessage(action.message, sourceId, measureName, value);
+					System.out.println(msg);
+				}
+			}
+		}
+		return alert;
+	}
+
+	private static boolean matchRule(RuleV2 rule, long value) {
+		String op = rule.operator == null ? "gt" : rule.operator.trim().toLowerCase();
+		switch (op) {
+		case "gt":
+			return value > rule.threshold;
+		case "gte":
+			return value >= rule.threshold;
+		case "lt":
+			return value < rule.threshold;
+		case "lte":
+			return value <= rule.threshold;
+		case "eq":
+			return value == rule.threshold;
+		case "ne":
+			return value != rule.threshold;
+		default:
+			return false;
+		}
+	}
+
+	private static void runScriptAction(ActionV2 action) {
+		if (action.script == null || action.script.trim().isEmpty()) {
+			return;
+		}
+		if (action.scriptIsOs) {
+			ReadOs.executeS(action.script);
+			return;
+		}
+		String escaped = action.script.replace("'", "'\"'\"'");
+		String sqlCmd = "echo '" + escaped + ";' |gsqlnet sys gliese --no-prompt";
+		ReadOs.executeS(sqlCmd);
+	}
+
+	private static String formatNotifyMessage(String messageTemplate, String sourceId, String measureName, long value) {
+		String template = messageTemplate == null || messageTemplate.trim().isEmpty()
+				? "[notify] {{source}} {{measure}}={{value}}"
+				: messageTemplate;
+		return template.replace("{{source}}", sourceId == null ? "-" : sourceId)
+				.replace("{{measure}}", measureName == null ? "-" : measureName)
+				.replace("{{value}}", String.valueOf(value));
+	}
+
+	private static String firstNonBlank(String... values) {
+		if (values == null) {
+			return null;
+		}
+		for (String value : values) {
+			if (value != null && !value.trim().isEmpty()) {
+				return value.trim();
+			}
+		}
+		return null;
+	}
+
+	private static long parseLong(String value) {
+		if (value == null || value.trim().isEmpty()) {
+			return 0L;
+		}
+		try {
+			return Long.parseLong(value.trim());
+		} catch (NumberFormatException e) {
+			return 0L;
+		}
+	}
+
 	private static Data diffDataCal(Data data, Data beforeData, model.Measure[] measure) {
 		// Data tempData = new Data(data.time, data.rc);
 		// ResultCommon[] rc = new ResultCommon[data.rc.length];
@@ -1655,11 +1962,98 @@ public class Gop {
 	}
 
 	private static Config readAndConvConf(File rFile, Class<Config> class1, Gson gson) throws FileNotFoundException {
-		FileInputStream fis = new FileInputStream(rFile);
-		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-		BufferedReader reader = new BufferedReader(isr);
+		try (FileInputStream fis = new FileInputStream(rFile);
+				InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+				BufferedReader reader = new BufferedReader(isr)) {
+			Config config = gson.fromJson(reader, Config.class);
+			if (config == null) {
+				System.out.println("invalid config file: empty json");
+				System.exit(0);
+			}
 
-		return gson.fromJson(reader, Config.class);
+			if (config.setting == null && config.server != null) {
+				config.setting = config.server;
+			}
+			if ((config.sources == null || config.sources.length == 0)
+					&& config.server != null && config.server.sourceRefs != null && config.server.sourceRefs.length > 0) {
+				config.sources = loadSourceConfigs(rFile, config.server.sourceRefs, gson);
+			}
+			if (config.setting == null) {
+				System.out.println("invalid config: missing setting/server");
+				System.exit(0);
+			}
+			return config;
+		} catch (IOException e) {
+			FileNotFoundException ex = new FileNotFoundException(e.getMessage());
+			ex.initCause(e);
+			throw ex;
+		}
+	}
+
+	private static SourceConfig[] loadSourceConfigs(File serverFile, String[] refs, Gson gson)
+			throws FileNotFoundException {
+		List<SourceConfig> sources = new ArrayList<>();
+		for (String ref : refs) {
+			if (ref == null || ref.trim().isEmpty()) {
+				continue;
+			}
+			File sourceFile = resolveSourceFile(serverFile, ref.trim());
+			if (sourceFile == null || !sourceFile.exists()) {
+				System.out.println("source config not found: " + ref);
+				System.exit(0);
+			}
+			SourceConfig source = readSourceConfig(sourceFile, gson);
+			if (source.source == null || source.source.trim().isEmpty()) {
+				source.source = sourceFile.getName().replaceFirst("\\.json$", "");
+			}
+			sources.add(source);
+		}
+		return sources.toArray(new SourceConfig[0]);
+	}
+
+	private static SourceConfig readSourceConfig(File sourceFile, Gson gson) throws FileNotFoundException {
+		try (FileInputStream fis = new FileInputStream(sourceFile);
+				InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+				BufferedReader reader = new BufferedReader(isr)) {
+			SourceConfig source = gson.fromJson(reader, SourceConfig.class);
+			if (source == null) {
+				System.out.println("invalid source config: " + sourceFile.getPath());
+				System.exit(0);
+			}
+			return source;
+		} catch (IOException e) {
+			FileNotFoundException ex = new FileNotFoundException(e.getMessage());
+			ex.initCause(e);
+			throw ex;
+		}
+	}
+
+	private static File resolveSourceFile(File serverFile, String sourceRef) {
+		File refFile = new File(sourceRef);
+		if (refFile.isAbsolute()) {
+			return refFile;
+		}
+		File baseDir = serverFile.getParentFile();
+		List<File> candidates = new ArrayList<>();
+		if (sourceRef.contains("/") || sourceRef.contains("\\") || sourceRef.endsWith(".json")) {
+			candidates.add(new File(baseDir, sourceRef));
+		} else {
+			candidates.add(new File(baseDir, sourceRef + ".json"));
+		}
+		File parent = baseDir == null ? null : baseDir.getParentFile();
+		if (parent != null) {
+			if (sourceRef.endsWith(".json")) {
+				candidates.add(new File(parent, "sources/" + sourceRef));
+			} else {
+				candidates.add(new File(parent, "sources/" + sourceRef + ".json"));
+			}
+		}
+		for (File candidate : candidates) {
+			if (candidate.exists()) {
+				return candidate;
+			}
+		}
+		return candidates.isEmpty() ? null : candidates.get(0);
 	}
 
 	private static void validateSourceDir(String source) {

@@ -65,6 +65,9 @@ public final class FileLogService {
 		BufferedWriter alertBw = null;
 		try {
 			for (int i = 0; i < data.rc.length; i++) {
+				if (ms == null || i >= ms.length || ms[i] == null) {
+					continue;
+				}
 				if (data.rc[i].alert && ms[i].alertScript != null) {
 					if (alertBw == null) {
 						FileWriter alertFw = new FileWriter(alertFile, true);

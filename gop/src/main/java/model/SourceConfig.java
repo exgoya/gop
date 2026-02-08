@@ -4,4 +4,5 @@ public class SourceConfig {
 	public String source;
 	public JdbcSource jdbcSource;
 	public Measure[] measure;
+	public MeasureV2[] measureV2;
 }

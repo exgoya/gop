@@ -4,11 +4,14 @@
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
+import java.lang.reflect.Method;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import app.Gop;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -18,6 +21,7 @@ import model.Setting;
 import io.ReadLog;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AppTest {
     @TempDir
@@ -42,5 +46,24 @@ class AppTest {
         rl.setNameMap("m");
         assertEquals(2, rl.nameMap.size());
         rl.nameMap.values().forEach(rcs -> assertNotNull(rcs[0]));
+    }
+
+    @Test
+    void readAndConvConfLoadsSplitServerAndSourceConfigs() throws Exception {
+        Path serverConfig = Path.of("..", "conf", "server", "default.json").normalize();
+        assertTrue(Files.exists(serverConfig), "server config sample must exist");
+
+        Gson gson = new GsonBuilder().setLenient().create();
+        Method method = Gop.class.getDeclaredMethod("readAndConvConf", File.class, Class.class, Gson.class);
+        method.setAccessible(true);
+
+        Config config = (Config) method.invoke(null, serverConfig.toFile(), Config.class, gson);
+        assertNotNull(config);
+        assertNotNull(config.setting);
+        assertTrue(config.setting.timeInterval > 0);
+        assertNotNull(config.sources);
+        assertTrue(config.sources.length > 0);
+        assertNotNull(config.sources[0].measureV2);
+        assertTrue(config.sources[0].measureV2.length > 0);
     }
 }
