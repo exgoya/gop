@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 2,
+  "source": "mysql-local",
+  "jdbcSource": {
+    "url": "jdbc:mysql://127.0.0.1:3306/",
+    "dbName": "gop",
+    "driverClass": "com.mysql.cj.jdbc.Driver",
+    "jdbcProperties": [
+      {
+        "name": "user",
+        "value": "gop"
+      },
+      {
+        "name": "password",
+        "value": "gop"
+      },
+      {
+        "name": "serverTimezone",
+        "value": "UTC"
+      },
+      {
+        "name": "useSSL",
+        "value": "false"
+      }
+    ]
+  },
+  "measureV2": [
+    {
+      "name": "global_status",
+      "sql": "select variable_name as target, cast(variable_value as signed) as value from performance_schema.global_status where variable_name in ('Threads_connected','Threads_running','Connections','Uptime')",
+      "targetColumn": "target",
+      "valueColumn": "value",
+      "defaultTag": "mysql",
+      "targets": [
+        {
+          "target": "Threads_connected",
+          "measure": "threads_connected",
+          "viewMode": "raw",
+          "rules": [
+            {
+              "id": "warn_threshold",
+              "operator": "gt",
+              "threshold": 80,
+              "actions": [
+                {
+                  "name": "warn",
+                  "type": "alert"
+                }
+              ]
+            },
+            {
+              "id": "critical_threshold",
+              "operator": "gt",
+              "threshold": 120,
+              "actions": [
+                {
+                  "name": "critical",
+                  "type": "alert"
+                },
+                {
+                  "name": "critical_script",
+                  "type": "script",
+                  "script": "echo '[CRITICAL] threads_connected is high'",
+                  "scriptIsOs": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "target": "Threads_running",
+          "measure": "threads_running",
+          "viewMode": "raw",
+          "rules": [
+            {
+              "id": "warn_threshold",
+              "operator": "gt",
+              "threshold": 20,
+              "actions": [
+                {
+                  "name": "warn",
+                  "type": "alert"
+                }
+              ]
+            },
+            {
+              "id": "critical_threshold",
+              "operator": "gt",
+              "threshold": 40,
+              "actions": [
+                {
+                  "name": "critical",
+                  "type": "alert"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "target": "Connections",
+          "measure": "connections",
+          "viewMode": "delta",
+          "rules": [
+            {
+              "id": "rate_warn_threshold",
+              "operator": "gt",
+              "threshold": 100,
+              "actions": [
+                {
+                  "name": "rate_warn",
+                  "type": "alert"
+                }
+              ]
+            },
+            {
+              "id": "rate_critical_threshold",
+              "operator": "gt",
+              "threshold": 300,
+              "actions": [
+                {
+                  "name": "rate_critical",
+                  "type": "alert"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "target": "Uptime",
+          "measure": "uptime",
+          "viewMode": "raw",
+          "rules": [
+            {
+              "id": "unexpected_reset_threshold",
+              "operator": "lt",
+              "threshold": 300,
+              "actions": [
+                {
+                  "name": "unexpected_reset",
+                  "type": "alert"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

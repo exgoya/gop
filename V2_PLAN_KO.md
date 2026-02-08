@@ -131,9 +131,9 @@ Source config 책임:
 
 권장 디렉터리 레이아웃:
 
-- `conf/v2/server/default.json`
-- `conf/v2/sources/mysql-local.json`
-- `conf/v2/sources/postgres-local.json`
+- `conf/server/default.json`
+- `conf/sources/mysql-local.json`
+- `conf/sources/postgres-local.json`
 
 Server config 예시:
 
@@ -464,8 +464,8 @@ Post-MVP 확장:
 
 - V2 기본 샘플 추가
   - `conf/multi_target_alerts.json`
-  - `conf/v2/server/default.json`
-  - `conf/v2/sources/*.json`
+  - `conf/server/default.json`
+  - `conf/sources/*.json`
 - 문서 갱신
   - `README.md`
   - `docs/source/config.rst`

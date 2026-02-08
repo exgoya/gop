@@ -131,9 +131,9 @@ Source config owns:
 
 Suggested layout:
 
-- `conf/v2/server/default.json`
-- `conf/v2/sources/mysql-local.json`
-- `conf/v2/sources/postgres-local.json`
+- `conf/server/default.json`
+- `conf/sources/mysql-local.json`
+- `conf/sources/postgres-local.json`
 
 Server config example:
 
@@ -464,8 +464,8 @@ Index structures:
 
 - Add V2 default samples:
   - `conf/multi_target_alerts.json`
-  - `conf/v2/server/default.json`
-  - `conf/v2/sources/*.json`
+  - `conf/server/default.json`
+  - `conf/sources/*.json`
 - Update docs:
   - `README.md`
   - `docs/source/config.rst`
