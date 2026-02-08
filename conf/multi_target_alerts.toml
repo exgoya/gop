@@ -1,0 +1,138 @@
+schemaVersion = 2
+
+[setting]
+timeInterval = 1000
+consolePrint = true
+pageSize = "10"
+retention = "2"
+printCSV = false
+
+[setting.fileLog]
+enable = true
+logPath = "data/"
+
+[setting.api]
+enable = true
+port = 18080
+threadPoolSize = 4
+logPath = "data/api.log"
+
+[[sources]]
+source = "mysql-local"
+
+[sources.jdbcSource]
+url = "jdbc:mysql://127.0.0.1:3306/"
+dbName = "gop"
+driverClass = "com.mysql.cj.jdbc.Driver"
+
+[[sources.jdbcSource.jdbcProperties]]
+name = "user"
+value = "gop"
+
+[[sources.jdbcSource.jdbcProperties]]
+name = "password"
+value = "gop"
+
+[[sources.jdbcSource.jdbcProperties]]
+name = "serverTimezone"
+value = "UTC"
+
+[[sources.jdbcSource.jdbcProperties]]
+name = "useSSL"
+value = "false"
+
+[[sources.measureV2]]
+name = "global_status"
+sql = "select variable_name as target, cast(variable_value as signed) as value from performance_schema.global_status where variable_name in ('Threads_connected','Threads_running','Connections','Uptime')"
+targetColumn = "target"
+valueColumn = "value"
+defaultTag = "mysql"
+
+[[sources.measureV2.targets]]
+target = "Threads_connected"
+measure = "threads_connected"
+viewMode = "raw"
+
+[[sources.measureV2.targets.rules]]
+id = "warn_threshold"
+operator = "gt"
+threshold = 80
+
+[[sources.measureV2.targets.rules.actions]]
+name = "warn"
+type = "alert"
+
+[[sources.measureV2.targets.rules]]
+id = "critical_threshold"
+operator = "gt"
+threshold = 120
+
+[[sources.measureV2.targets.rules.actions]]
+name = "critical"
+type = "alert"
+
+[[sources.measureV2.targets.rules.actions]]
+name = "critical_script"
+type = "script"
+script = "echo '[CRITICAL] threads_connected is high'"
+scriptIsOs = true
+
+[[sources.measureV2.targets]]
+target = "Threads_running"
+measure = "threads_running"
+viewMode = "raw"
+
+[[sources.measureV2.targets.rules]]
+id = "warn_threshold"
+operator = "gt"
+threshold = 20
+
+[[sources.measureV2.targets.rules.actions]]
+name = "warn"
+type = "alert"
+
+[[sources.measureV2.targets.rules]]
+id = "critical_threshold"
+operator = "gt"
+threshold = 40
+
+[[sources.measureV2.targets.rules.actions]]
+name = "critical"
+type = "alert"
+
+[[sources.measureV2.targets]]
+target = "Connections"
+measure = "connections"
+viewMode = "delta"
+
+[[sources.measureV2.targets.rules]]
+id = "rate_warn_threshold"
+operator = "gt"
+threshold = 100
+
+[[sources.measureV2.targets.rules.actions]]
+name = "rate_warn"
+type = "alert"
+
+[[sources.measureV2.targets.rules]]
+id = "rate_critical_threshold"
+operator = "gt"
+threshold = 300
+
+[[sources.measureV2.targets.rules.actions]]
+name = "rate_critical"
+type = "alert"
+
+[[sources.measureV2.targets]]
+target = "Uptime"
+measure = "uptime"
+viewMode = "raw"
+
+[[sources.measureV2.targets.rules]]
+id = "unexpected_reset_threshold"
+operator = "lt"
+threshold = 300
+
+[[sources.measureV2.targets.rules.actions]]
+name = "unexpected_reset"
+type = "alert"

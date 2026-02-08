@@ -1,0 +1,21 @@
+schemaVersion: 2
+
+server:
+  timeInterval: 1000
+  consolePrint: true
+  pageSize: "10"
+  retention: "2"
+  printCSV: false
+
+  fileLog:
+    enable: true
+    logPath: data/
+
+  api:
+    enable: true
+    port: 18080
+    threadPoolSize: 4
+    logPath: data/api.log
+
+  sourceRefs:
+    - mysql-local
