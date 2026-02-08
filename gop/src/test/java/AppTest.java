@@ -21,6 +21,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import config.ConfigResolverV2;
 import model.FileLog;
 import model.Config;
 import model.Measure;
@@ -28,7 +29,9 @@ import model.Setting;
 import model.SourceConfig;
 import io.ReadLog;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -237,5 +240,34 @@ class AppTest {
                 System.setProperty("gop.config.path", prev);
             }
         }
+    }
+
+    @Test
+    void configResolverRejectsLegacyMeasureField() throws Exception {
+        Path serverFile = tempDir.resolve("server-legacy.json");
+        String legacy = "{"
+                + "\"schemaVersion\":2,"
+                + "\"server\":{\"timeInterval\":1000,\"consolePrint\":true},"
+                + "\"measure\":[{\"name\":\"m1\",\"diff\":false,\"alertValue\":1,\"alertPolicy\":1,\"sql\":\"select 1\"}]"
+                + "}";
+        Files.writeString(serverFile, legacy, StandardCharsets.UTF_8);
+        Gson gson = new GsonBuilder().setLenient().create();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> ConfigResolverV2.loadServerConfig(serverFile.toFile(), gson));
+        assertTrue(ex.getMessage().contains("legacy field 'measure'"));
+    }
+
+    @Test
+    void configResolverValidateReturnsErrorForBadSchemaVersion() throws Exception {
+        Path serverFile = tempDir.resolve("server-bad-schema.json");
+        Files.writeString(serverFile, "{\"schemaVersion\":1,\"server\":{\"timeInterval\":1000}}",
+                StandardCharsets.UTF_8);
+        Gson gson = new GsonBuilder().setLenient().create();
+
+        ConfigResolverV2.ValidationResult result = ConfigResolverV2.validateServerConfig(serverFile.toFile(), gson);
+        assertFalse(result.valid);
+        assertNotNull(result.errors);
+        assertTrue(result.errors.get(0).contains("schemaVersion"));
     }
 }

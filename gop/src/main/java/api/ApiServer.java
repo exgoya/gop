@@ -12,7 +12,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +24,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import config.ConfigManager;
+import config.ConfigResolverV2;
 import log.LogFileUtil;
 import model.Config;
 import model.Data;
@@ -42,6 +42,7 @@ public final class ApiServer {
 		if (config.setting.api == null || !config.setting.api.enable) {
 			return;
 		}
+		java.util.concurrent.atomic.AtomicReference<Config> configRef = new java.util.concurrent.atomic.AtomicReference<>(config);
 		int port = config.setting.api.port > 0 ? config.setting.api.port : 18080;
 		int poolSize = config.setting.api.threadPoolSize > 0 ? config.setting.api.threadPoolSize : 4;
 		PrintWriter apiLog = createApiLogger(config);
@@ -68,7 +69,7 @@ public final class ApiServer {
 			StatusQuery query = body.isEmpty() ? new StatusQuery() : gson.fromJson(body, StatusQuery.class);
 			String resultJson;
 			try {
-				resultJson = readStatusAsJson(config, gson, query);
+				resultJson = readStatusAsJson(configRef.get(), gson, query);
 			} catch (Exception e) {
 				logApi(apiLog, "status", exchange.getRequestMethod(), exchange.getRemoteAddress().toString(), 500);
 				byte[] err = e.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -103,7 +104,7 @@ public final class ApiServer {
 			}
 			String resultJson;
 			try {
-				resultJson = readLogsAsJson(config, gson, query);
+				resultJson = readLogsAsJson(configRef.get(), gson, query);
 			} catch (Exception e) {
 				logApi(apiLog, "watch", exchange.getRequestMethod(), exchange.getRemoteAddress().toString(), 500);
 				byte[] err = e.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -132,7 +133,7 @@ public final class ApiServer {
 			DashboardQuery query = body.isEmpty() ? new DashboardQuery() : gson.fromJson(body, DashboardQuery.class);
 			String resultJson;
 			try {
-				resultJson = readDashboardAsJson(config, gson, query);
+				resultJson = readDashboardAsJson(configRef.get(), gson, query);
 			} catch (Exception e) {
 				logApi(apiLog, "dashboard", exchange.getRequestMethod(), exchange.getRemoteAddress().toString(), 500);
 				byte[] err = e.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -163,7 +164,7 @@ public final class ApiServer {
 					: gson.fromJson(body, DashboardSeriesQuery.class);
 			String resultJson;
 			try {
-				resultJson = readDashboardSeriesAsJson(config, gson, query);
+				resultJson = readDashboardSeriesAsJson(configRef.get(), gson, query);
 			} catch (Exception e) {
 				logApi(apiLog, "dashboard/series", exchange.getRequestMethod(), exchange.getRemoteAddress().toString(),
 						500);
@@ -198,6 +199,8 @@ public final class ApiServer {
 		});
 		server.createContext("/config/server", exchange -> handleConfigEndpoint(apiLog, exchange, "server"));
 		server.createContext("/config/source", exchange -> handleConfigEndpoint(apiLog, exchange, "source"));
+		server.createContext("/v2/config/validate", exchange -> handleV2Validate(apiLog, exchange, configRef));
+		server.createContext("/v2/config/reload", exchange -> handleV2Reload(apiLog, exchange, configRef));
 		server.start();
 		System.out.println("API server listening on http://127.0.0.1:" + port);
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -260,6 +263,17 @@ public final class ApiServer {
 		String kind;
 		String rootPath;
 		List<String> names;
+	}
+
+	private static class ReloadQuery {
+		String serverPath;
+	}
+
+	private static class ReloadResponse {
+		boolean reloaded;
+		String serverPath;
+		String message;
+		List<String> errors;
 	}
 
 	private static class DashboardResponse {
@@ -375,6 +389,92 @@ public final class ApiServer {
 		}
 	}
 
+	private static void handleV2Validate(PrintWriter apiLog, com.sun.net.httpserver.HttpExchange exchange,
+			java.util.concurrent.atomic.AtomicReference<Config> configRef) throws IOException {
+		String method = exchange.getRequestMethod();
+		if (!"POST".equalsIgnoreCase(method)) {
+			logApi(apiLog, "v2/config/validate", method, exchange.getRemoteAddress().toString(), 405);
+			exchange.sendResponseHeaders(405, -1);
+			return;
+		}
+		Gson gson = new GsonBuilder().setLenient().create();
+		try {
+			String body = readRequestBody(exchange.getRequestBody());
+			ReloadQuery query = body.isEmpty() ? new ReloadQuery() : gson.fromJson(body, ReloadQuery.class);
+			String serverPath = resolveServerConfigPath(configRef.get(), query == null ? null : query.serverPath);
+			ConfigResolverV2.ValidationResult result = ConfigResolverV2
+					.validateServerConfig(new java.io.File(serverPath), gson);
+			String json = gson.toJson(result);
+			int status = result.valid ? 200 : 400;
+			sendResponse(exchange, status, "application/json", json);
+			logApi(apiLog, "v2/config/validate", method, exchange.getRemoteAddress().toString(), status);
+		} catch (Exception e) {
+			logApi(apiLog, "v2/config/validate", method, exchange.getRemoteAddress().toString(), 500);
+			sendResponse(exchange, 500, "text/plain", e.toString());
+		}
+	}
+
+	private static void handleV2Reload(PrintWriter apiLog, com.sun.net.httpserver.HttpExchange exchange,
+			java.util.concurrent.atomic.AtomicReference<Config> configRef) throws IOException {
+		String method = exchange.getRequestMethod();
+		if (!"POST".equalsIgnoreCase(method)) {
+			logApi(apiLog, "v2/config/reload", method, exchange.getRemoteAddress().toString(), 405);
+			exchange.sendResponseHeaders(405, -1);
+			return;
+		}
+		Gson gson = new GsonBuilder().setLenient().create();
+		ReloadResponse response = new ReloadResponse();
+		response.errors = new ArrayList<>();
+		try {
+			String body = readRequestBody(exchange.getRequestBody());
+			ReloadQuery query = body.isEmpty() ? new ReloadQuery() : gson.fromJson(body, ReloadQuery.class);
+			String serverPath = resolveServerConfigPath(configRef.get(), query == null ? null : query.serverPath);
+			response.serverPath = serverPath;
+
+			ConfigResolverV2.ValidationResult validation = ConfigResolverV2
+					.validateServerConfig(new java.io.File(serverPath), gson);
+			if (!validation.valid) {
+				response.reloaded = false;
+				response.message = "reload blocked: config validation failed";
+				response.errors.addAll(validation.errors);
+				String json = gson.toJson(response);
+				sendResponse(exchange, 400, "application/json", json);
+				logApi(apiLog, "v2/config/reload", method, exchange.getRemoteAddress().toString(), 400);
+				return;
+			}
+
+			Config reloaded = ConfigResolverV2.loadServerConfig(new java.io.File(serverPath), gson);
+			configRef.set(reloaded);
+			response.reloaded = true;
+			response.message = "reloaded";
+			String json = gson.toJson(response);
+			sendResponse(exchange, 200, "application/json", json);
+			logApi(apiLog, "v2/config/reload", method, exchange.getRemoteAddress().toString(), 200);
+		} catch (IllegalArgumentException e) {
+			response.reloaded = false;
+			response.message = "reload blocked";
+			response.errors.add(e.getMessage());
+			String json = gson.toJson(response);
+			sendResponse(exchange, 400, "application/json", json);
+			logApi(apiLog, "v2/config/reload", method, exchange.getRemoteAddress().toString(), 400);
+		} catch (Exception e) {
+			logApi(apiLog, "v2/config/reload", method, exchange.getRemoteAddress().toString(), 500);
+			sendResponse(exchange, 500, "text/plain", e.toString());
+		}
+	}
+
+	private static String resolveServerConfigPath(Config config, String overridePath) {
+		if (overridePath != null && !overridePath.trim().isEmpty()) {
+			return overridePath.trim();
+		}
+		if (config != null && config.setting != null && config.setting.runtimeConfigPath != null
+				&& !config.setting.runtimeConfigPath.trim().isEmpty()) {
+			return config.setting.runtimeConfigPath.trim();
+		}
+		throw new IllegalArgumentException(
+				"serverPath is required. pass body {\"serverPath\":\"/path/to/conf/server/default.json\"}");
+	}
+
 	private static void sendResponse(com.sun.net.httpserver.HttpExchange exchange, int status, String contentType,
 			String body) throws IOException {
 		byte[] out = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
@@ -470,6 +570,10 @@ public final class ApiServer {
 		if (cfg == null) {
 			throw new IllegalArgumentException("config object is required");
 		}
+		if (!cfg.has("schemaVersion") || !cfg.get("schemaVersion").isJsonPrimitive()
+				|| cfg.get("schemaVersion").getAsInt() != 2) {
+			throw new IllegalArgumentException("schemaVersion=2 is required");
+		}
 		if ("server".equals(kind)) {
 			if (!cfg.has("server") && !cfg.has("setting")) {
 				throw new IllegalArgumentException("server config must contain 'server' or 'setting'");
@@ -480,8 +584,8 @@ public final class ApiServer {
 			if (!cfg.has("source")) {
 				throw new IllegalArgumentException("source config must contain 'source'");
 			}
-			if (!cfg.has("measureV2") && !cfg.has("measure")) {
-				throw new IllegalArgumentException("source config must contain 'measureV2' or 'measure'");
+			if (!cfg.has("measureV2")) {
+				throw new IllegalArgumentException("source config must contain 'measureV2'");
 			}
 		}
 	}

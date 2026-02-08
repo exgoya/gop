@@ -39,6 +39,7 @@ import model.SourceConfig;
 import model.TargetV2;
 import api.ApiServer;
 import config.ConfigManager;
+import config.ConfigResolverV2;
 import db.Database;
 import io.ReadLog;
 import io.ReadOs;
@@ -1974,98 +1975,17 @@ public class Gop {
 	}
 
 	private static Config readAndConvConf(File rFile, Class<Config> class1, Gson gson) throws FileNotFoundException {
-		try (FileInputStream fis = new FileInputStream(rFile);
-				InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-				BufferedReader reader = new BufferedReader(isr)) {
-			Config config = gson.fromJson(reader, Config.class);
-			if (config == null) {
-				System.out.println("invalid config file: empty json");
-				System.exit(0);
-			}
-
-			if (config.setting == null && config.server != null) {
-				config.setting = config.server;
-			}
-			if ((config.sources == null || config.sources.length == 0)
-					&& config.server != null && config.server.sourceRefs != null && config.server.sourceRefs.length > 0) {
-				config.sources = loadSourceConfigs(rFile, config.server.sourceRefs, gson);
-			}
-			if (config.setting == null) {
-				System.out.println("invalid config: missing setting/server");
-				System.exit(0);
-			}
-			return config;
+		try {
+			return ConfigResolverV2.loadServerConfig(rFile, gson);
+		} catch (IllegalArgumentException e) {
+			System.out.println(e.getMessage());
+			System.exit(0);
+			return null;
 		} catch (IOException e) {
 			FileNotFoundException ex = new FileNotFoundException(e.getMessage());
 			ex.initCause(e);
 			throw ex;
 		}
-	}
-
-	private static SourceConfig[] loadSourceConfigs(File serverFile, String[] refs, Gson gson)
-			throws FileNotFoundException {
-		List<SourceConfig> sources = new ArrayList<>();
-		for (String ref : refs) {
-			if (ref == null || ref.trim().isEmpty()) {
-				continue;
-			}
-			File sourceFile = resolveSourceFile(serverFile, ref.trim());
-			if (sourceFile == null || !sourceFile.exists()) {
-				System.out.println("source config not found: " + ref);
-				System.exit(0);
-			}
-			SourceConfig source = readSourceConfig(sourceFile, gson);
-			if (source.source == null || source.source.trim().isEmpty()) {
-				source.source = sourceFile.getName().replaceFirst("\\.json$", "");
-			}
-			sources.add(source);
-		}
-		return sources.toArray(new SourceConfig[0]);
-	}
-
-	private static SourceConfig readSourceConfig(File sourceFile, Gson gson) throws FileNotFoundException {
-		try (FileInputStream fis = new FileInputStream(sourceFile);
-				InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-				BufferedReader reader = new BufferedReader(isr)) {
-			SourceConfig source = gson.fromJson(reader, SourceConfig.class);
-			if (source == null) {
-				System.out.println("invalid source config: " + sourceFile.getPath());
-				System.exit(0);
-			}
-			return source;
-		} catch (IOException e) {
-			FileNotFoundException ex = new FileNotFoundException(e.getMessage());
-			ex.initCause(e);
-			throw ex;
-		}
-	}
-
-	private static File resolveSourceFile(File serverFile, String sourceRef) {
-		File refFile = new File(sourceRef);
-		if (refFile.isAbsolute()) {
-			return refFile;
-		}
-		File baseDir = serverFile.getParentFile();
-		List<File> candidates = new ArrayList<>();
-		if (sourceRef.contains("/") || sourceRef.contains("\\") || sourceRef.endsWith(".json")) {
-			candidates.add(new File(baseDir, sourceRef));
-		} else {
-			candidates.add(new File(baseDir, sourceRef + ".json"));
-		}
-		File parent = baseDir == null ? null : baseDir.getParentFile();
-		if (parent != null) {
-			if (sourceRef.endsWith(".json")) {
-				candidates.add(new File(parent, "sources/" + sourceRef));
-			} else {
-				candidates.add(new File(parent, "sources/" + sourceRef + ".json"));
-			}
-		}
-		for (File candidate : candidates) {
-			if (candidate.exists()) {
-				return candidate;
-			}
-		}
-		return candidates.isEmpty() ? null : candidates.get(0);
 	}
 
 	private static void validateSourceDir(String source) {

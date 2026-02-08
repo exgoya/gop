@@ -15,6 +15,7 @@ public class Setting {
 	public FileLog fileLog;
 	public Boolean printCSV; // ansi or csv
 	public Api api;
+	public String runtimeConfigPath;
 
 	@Override
 	public String toString() {
