@@ -5,23 +5,32 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import app.Gop;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
+import model.FileLog;
 import model.Config;
 import model.Measure;
 import model.Setting;
+import model.SourceConfig;
 import io.ReadLog;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class AppTest {
     @TempDir
@@ -65,5 +74,168 @@ class AppTest {
         assertTrue(config.sources.length > 0);
         assertNotNull(config.sources[0].measureV2);
         assertTrue(config.sources[0].measureV2.length > 0);
+    }
+
+    @Test
+    void dashboardAggregationReturnsExpectedMetrics() throws Exception {
+        Setting setting = new Setting();
+        setting.configId = "cfg";
+        setting.fileLog = new FileLog();
+        setting.fileLog.enable = true;
+        setting.fileLog.logPath = tempDir.resolve("logs").toString() + "/";
+
+        Config config = new Config(setting, new Measure[0]);
+        SourceConfig source = new SourceConfig();
+        source.source = "s1";
+        config.sources = new SourceConfig[] { source };
+
+        LocalDate today = LocalDate.now();
+        String ym = today.format(DateTimeFormatter.ofPattern("yyyy/MM"));
+        String day = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        Path dir = tempDir.resolve("logs").resolve("cfg").resolve(ym).resolve("s1");
+        Files.createDirectories(dir);
+        Path log = dir.resolve("log_" + day + ".json");
+        String l1 = "{\"time\":\"" + today + " 00:00:00.000\",\"source\":\"s1\",\"rc\":[{\"measure\":\"m1\",\"value\":10,\"tag\":\"t\",\"alert\":false,\"target\":\"Threads_connected\",\"actionStates\":[\"warn\"]}]}";
+        String l2 = "{\"time\":\"" + today + " 00:01:00.000\",\"source\":\"s1\",\"rc\":[{\"measure\":\"m1\",\"value\":30,\"tag\":\"t\",\"alert\":true,\"target\":\"Threads_connected\",\"actionStates\":[\"critical\",\"critical_script\"]}]}";
+        Files.writeString(log, l1 + "\n" + l2 + "\n", StandardCharsets.UTF_8);
+
+        Gson gson = new GsonBuilder().setLenient().create();
+        Class<?> queryClass = Class.forName("api.ApiServer$DashboardQuery");
+        Constructor<?> ctor = queryClass.getDeclaredConstructor();
+        ctor.setAccessible(true);
+        Object query = ctor.newInstance();
+
+        Method method = Class.forName("api.ApiServer")
+                .getDeclaredMethod("readDashboardAsJson", Config.class, Gson.class, queryClass);
+        method.setAccessible(true);
+        String json = (String) method.invoke(null, config, gson, query);
+
+        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        JsonArray items = root.getAsJsonArray("items");
+        assertNotNull(items);
+
+        JsonObject m1 = null;
+        for (int i = 0; i < items.size(); i++) {
+            JsonObject item = items.get(i).getAsJsonObject();
+            if ("s1".equals(item.get("source").getAsString()) && "m1".equals(item.get("measure").getAsString())) {
+                m1 = item;
+                break;
+            }
+        }
+        if (m1 == null) {
+            fail("dashboard item for s1/m1 not found");
+        }
+
+        assertEquals(30L, m1.get("latestValue").getAsLong());
+        assertEquals(10L, m1.get("minValue").getAsLong());
+        assertEquals(30L, m1.get("maxValue").getAsLong());
+        assertEquals(2L, m1.get("count").getAsLong());
+        assertEquals(1L, m1.get("alertCount").getAsLong());
+        assertEquals(3L, m1.get("actionCount").getAsLong());
+        JsonArray latestActionStates = m1.getAsJsonArray("latestActionStates");
+        assertNotNull(latestActionStates);
+        assertEquals(2, latestActionStates.size());
+        assertEquals("critical", latestActionStates.get(0).getAsString());
+        assertEquals(20D, m1.get("avgValue").getAsDouble(), 0.0001);
+    }
+
+    @Test
+    void dashboardSeriesReturnsRecentPoints() throws Exception {
+        Setting setting = new Setting();
+        setting.configId = "cfg";
+        setting.fileLog = new FileLog();
+        setting.fileLog.enable = true;
+        setting.fileLog.logPath = tempDir.resolve("logs").toString() + "/";
+
+        Config config = new Config(setting, new Measure[0]);
+        SourceConfig source = new SourceConfig();
+        source.source = "s1";
+        config.sources = new SourceConfig[] { source };
+
+        LocalDate today = LocalDate.now();
+        String ym = today.format(DateTimeFormatter.ofPattern("yyyy/MM"));
+        String day = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        Path dir = tempDir.resolve("logs").resolve("cfg").resolve(ym).resolve("s1");
+        Files.createDirectories(dir);
+        Path log = dir.resolve("log_" + day + ".json");
+        String l1 = "{\"time\":\"" + today + " 00:00:00.000\",\"source\":\"s1\",\"rc\":[{\"measure\":\"m1\",\"value\":11,\"tag\":\"t\",\"alert\":false,\"target\":\"Threads_connected\",\"actionStates\":[\"warn\"]}]}";
+        String l2 = "{\"time\":\"" + today + " 00:01:00.000\",\"source\":\"s1\",\"rc\":[{\"measure\":\"m1\",\"value\":22,\"tag\":\"t\",\"alert\":true,\"target\":\"Threads_connected\",\"actionStates\":[\"critical\"]}]}";
+        Files.writeString(log, l1 + "\n" + l2 + "\n", StandardCharsets.UTF_8);
+
+        Gson gson = new GsonBuilder().setLenient().create();
+        Class<?> queryClass = Class.forName("api.ApiServer$DashboardSeriesQuery");
+        Constructor<?> ctor = queryClass.getDeclaredConstructor();
+        ctor.setAccessible(true);
+        Object query = ctor.newInstance();
+        Method method = Class.forName("api.ApiServer")
+                .getDeclaredMethod("readDashboardSeriesAsJson", Config.class, Gson.class, queryClass);
+        method.setAccessible(true);
+        String json = (String) method.invoke(null, config, gson, query);
+
+        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        JsonArray points = root.getAsJsonArray("points");
+        assertNotNull(points);
+        assertEquals(2, points.size());
+
+        JsonObject latest = points.get(1).getAsJsonObject();
+        assertEquals("s1", latest.get("source").getAsString());
+        assertEquals("m1", latest.get("measure").getAsString());
+        assertEquals(22L, latest.get("value").getAsLong());
+        assertEquals("Threads_connected", latest.get("target").getAsString());
+        assertTrue(latest.get("alert").getAsBoolean());
+        JsonArray actionStates = latest.getAsJsonArray("actionStates");
+        assertNotNull(actionStates);
+        assertEquals(1, actionStates.size());
+        assertEquals("critical", actionStates.get(0).getAsString());
+    }
+
+    @Test
+    void configUpsertAndListWorkForServerAndSource() throws Exception {
+        String prev = System.getProperty("gop.config.path");
+        System.setProperty("gop.config.path", tempDir.resolve("conf").toString());
+        try {
+            Gson gson = new GsonBuilder().setLenient().create();
+            Class<?> apiServer = Class.forName("api.ApiServer");
+            Method upsert = apiServer.getDeclaredMethod("upsertConfigFile", String.class, Gson.class, String.class);
+            upsert.setAccessible(true);
+            Method list = apiServer.getDeclaredMethod("listConfigFiles", String.class);
+            list.setAccessible(true);
+
+            String serverBody = "{\"name\":\"server-a\",\"config\":{\"schemaVersion\":2,\"server\":{\"timeInterval\":1000,\"consolePrint\":true}}}";
+            Object serverSaveResp = upsert.invoke(null, "server", gson, serverBody);
+            JsonObject serverSave = JsonParser.parseString(gson.toJson(serverSaveResp)).getAsJsonObject();
+            assertTrue(serverSave.get("saved").getAsBoolean());
+            assertEquals("server-a", serverSave.get("name").getAsString());
+            Path serverFile = tempDir.resolve("conf").resolve("server").resolve("server-a.json");
+            assertTrue(Files.exists(serverFile));
+
+            String sourceBody = "{\"config\":{\"schemaVersion\":2,\"source\":\"mysql-local\",\"measureV2\":[]}}";
+            Object sourceSaveResp = upsert.invoke(null, "source", gson, sourceBody);
+            JsonObject sourceSave = JsonParser.parseString(gson.toJson(sourceSaveResp)).getAsJsonObject();
+            assertTrue(sourceSave.get("saved").getAsBoolean());
+            assertEquals("mysql-local", sourceSave.get("name").getAsString());
+            Path sourceFile = tempDir.resolve("conf").resolve("sources").resolve("mysql-local.json");
+            assertTrue(Files.exists(sourceFile));
+
+            Object serverListResp = list.invoke(null, "server");
+            JsonObject serverList = JsonParser.parseString(gson.toJson(serverListResp)).getAsJsonObject();
+            JsonArray serverNames = serverList.getAsJsonArray("names");
+            assertNotNull(serverNames);
+            assertEquals(1, serverNames.size());
+            assertEquals("server-a", serverNames.get(0).getAsString());
+
+            Object sourceListResp = list.invoke(null, "source");
+            JsonObject sourceList = JsonParser.parseString(gson.toJson(sourceListResp)).getAsJsonObject();
+            JsonArray sourceNames = sourceList.getAsJsonArray("names");
+            assertNotNull(sourceNames);
+            assertEquals(1, sourceNames.size());
+            assertEquals("mysql-local", sourceNames.get(0).getAsString());
+        } finally {
+            if (prev == null) {
+                System.clearProperty("gop.config.path");
+            } else {
+                System.setProperty("gop.config.path", prev);
+            }
+        }
     }
 }

@@ -29,7 +29,9 @@ public class Data {
 		// new ResultCommon[data.rc.length];
 
 		for (int i = 0; i < data.rc.length; i++) {
-			rc[i] = new ResultCommon(data.rc[i].measure, data.rc[i].value, data.rc[i].tag, data.rc[i].alert);
+			String[] actionStates = data.rc[i].actionStates == null ? null : data.rc[i].actionStates.clone();
+			rc[i] = new ResultCommon(data.rc[i].measure, data.rc[i].value, data.rc[i].tag, data.rc[i].alert,
+					data.rc[i].target, actionStates);
 		}
 		this.rc = rc;
 	}

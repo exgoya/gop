@@ -10,6 +10,8 @@ public class ResultCommon {
 	public long value;
 	public String tag;
 	public boolean alert;
+	public String target;
+	public String[] actionStates;
 
 	public ResultCommon(String measure, long value,  String tag, boolean alert) {
 		super();
@@ -17,6 +19,16 @@ public class ResultCommon {
 		this.value = value;
 		this.tag = tag;
 		this.alert = alert;
+	}
+
+	public ResultCommon(String measure, long value, String tag, boolean alert, String target, String[] actionStates) {
+		super();
+		this.measure = measure;
+		this.value = value;
+		this.tag = tag;
+		this.alert = alert;
+		this.target = target;
+		this.actionStates = actionStates;
 	}
 
 

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1826,8 +1827,9 @@ public class Gop {
 			return;
 		}
 		long value = applyViewMode(sourceId, measureName, rawValue, viewMode);
-		boolean alert = evaluateRulesAndRunActions(sourceId, measureName, value, rules);
-		resultList.add(new ResultCommon(measureName, value, tag, alert));
+		RuleEvalResult eval = evaluateRulesAndRunActions(sourceId, measureName, value, rules);
+		String[] actionStates = eval.actionStates.toArray(new String[0]);
+		resultList.add(new ResultCommon(measureName, value, tag, eval.alert, normalizedTarget, actionStates));
 	}
 
 	private static long applyViewMode(String sourceId, String measureName, long rawValue, String viewMode) {
@@ -1840,11 +1842,16 @@ public class Gop {
 		return rawValue;
 	}
 
-	private static boolean evaluateRulesAndRunActions(String sourceId, String measureName, long value, RuleV2[] rules) {
+	private static class RuleEvalResult {
+		boolean alert;
+		LinkedHashSet<String> actionStates = new LinkedHashSet<>();
+	}
+
+	private static RuleEvalResult evaluateRulesAndRunActions(String sourceId, String measureName, long value, RuleV2[] rules) {
+		RuleEvalResult result = new RuleEvalResult();
 		if (rules == null || rules.length == 0) {
-			return false;
+			return result;
 		}
-		boolean alert = false;
 		for (RuleV2 rule : rules) {
 			if (rule == null) {
 				continue;
@@ -1853,7 +1860,8 @@ public class Gop {
 				continue;
 			}
 			if (rule.actions == null || rule.actions.length == 0) {
-				alert = true;
+				result.alert = true;
+				result.actionStates.add("alert");
 				continue;
 			}
 			for (ActionV2 action : rule.actions) {
@@ -1861,21 +1869,25 @@ public class Gop {
 					continue;
 				}
 				String actionType = action.type.trim().toLowerCase();
+				String actionName = firstNonBlank(action.name, action.type);
 				if ("alert".equals(actionType)) {
-					alert = true;
+					result.alert = true;
+					result.actionStates.add(actionName);
 					continue;
 				}
 				if ("script".equals(actionType)) {
 					runScriptAction(action);
+					result.actionStates.add(actionName);
 					continue;
 				}
 				if ("notify".equals(actionType)) {
 					String msg = formatNotifyMessage(action.message, sourceId, measureName, value);
 					System.out.println(msg);
+					result.actionStates.add(actionName);
 				}
 			}
 		}
-		return alert;
+		return result;
 	}
 
 	private static boolean matchRule(RuleV2 rule, long value) {
